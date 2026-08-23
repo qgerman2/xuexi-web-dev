@@ -306,16 +306,55 @@
         '</div>' +
       '</div>' +
 
-      '<div class="coord-bloque">' +
+        '<div class="coord-bloque">' +
         '<h3>Miembros</h3>' +
         '<p class="coord-desc">El estado de la cuota lo marca la coordinación: nadie puede marcarse solo.</p>' +
         '<div id="coord-miembros-lista"></div>' +
+      '</div>' +
+
+      '<div class="coord-bloque">' +
+        '<h3>Fotografías y Galerías de Eventos</h3>' +
+        '<p class="coord-desc">Sube y gestiona fotos oficiales directamente en la galería de cada actividad.</p>' +
+        '<div class="coord-fila">' +
+          '<select id="coord-foto-evento-select">' +
+            '<option value="">Cargando actividades…</option>' +
+          '</select>' +
+          '<button class="btn btn-sello" id="coord-btn-ir-evento">Abrir galería para subir fotos →</button>' +
+        '</div>' +
       '</div>' +
       '</div>';
 
     document.getElementById('coord-crear-codigo').addEventListener('click', crearCodigo);
     document.getElementById('coord-agregar-evento').addEventListener('click', agregarEvento);
     document.getElementById('coord-importar').addEventListener('click', importarPlan);
+
+    // Cargar eventos para el selector de fotos
+    var selEventos = document.getElementById('coord-foto-evento-select');
+    var btnIrEvento = document.getElementById('coord-btn-ir-evento');
+
+    fetch('data/eventos.json', {cache:'no-cache'})
+      .then(function(r){ return r.ok ? r.json() : {eventos:[]}; })
+      .then(function(d){
+        var evs = d.eventos || [];
+        selEventos.innerHTML = '<option value="">Selecciona una actividad…</option>' +
+          evs.map(function(ev){
+            return '<option value="' + esc(ev.id || encodeURIComponent(ev.titulo)) + '">' +
+              esc(ev.fecha || 'Sin fecha') + ' · ' + esc(ev.titulo) +
+            '</option>';
+          }).join('');
+      })
+      .catch(function(){
+        selEventos.innerHTML = '<option value="">No se pudieron cargar actividades</option>';
+      });
+
+    btnIrEvento.addEventListener('click', function(){
+      var evId = selEventos.value;
+      if (!evId){
+        alert('Por favor selecciona una actividad de la lista.');
+        return;
+      }
+      window.location.href = 'evento.html?id=' + encodeURIComponent(evId);
+    });
 
     listarCodigos();
     listarCalendario();

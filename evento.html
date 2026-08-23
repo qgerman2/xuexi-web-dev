@@ -101,9 +101,14 @@
   </div>
 </footer>
 
-<script src="assets/nav.js?v=12"></script>
-<script src="assets/auth.js?v=12"></script>
-<script src="assets/datos.js?v=12"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/nav.js?v=13"></script>
+<script src="assets/auth.js?v=13"></script>
+<script src="assets/datos.js?v=13"></script>
 <script>
 (function(){
   document.getElementById('anio').textContent = new Date().getFullYear();
@@ -141,45 +146,46 @@
     return v.indexOf('/') !== -1 ? v.replace(/^\//, '') : carpeta + v;
   }
 
-  // El panel puede guardar cada foto como texto ("foto.jpg") o, según el
-  // widget, como objeto ({foto:"assets/foto.jpg"}). Aceptamos las dos formas
-  // para que no dependa de cómo se creó la entrada.
   function comoArchivo(f){
-    if (typeof f === 'string') return f;
-    if (f && typeof f === 'object'){
-      var k = Object.keys(f)[0];
-      return k ? String(f[k]) : '';
-    }
+    if (!f) return '';
+    if (typeof f === 'string') return f.trim();
+    if (typeof f === 'object' && f.foto) return String(f.foto).trim();
     return '';
   }
 
   function fecha(iso){
-    var p = String(iso).split('-');
-    return new Date(+p[0], +p[1] - 1, +p[2]);
+    if (!iso) return new Date();
+    var partes = iso.split('-');
+    if (partes.length < 3) return new Date(iso);
+    return new Date(parseInt(partes[0],10), parseInt(partes[1],10)-1, parseInt(partes[2],10));
   }
 
-  function esPasado(e){
-    var hoy = new Date(); hoy.setHours(0,0,0,0);
-    return fecha(e.fecha) < hoy;
+  function esPasado(ev){
+    if (!ev || !ev.fecha) return false;
+    var d = fecha(ev.fecha);
+    d.setHours(23,59,59,999);
+    return d < new Date();
   }
-
-  // Galería de fotos actual y lightbox state
-  var galeriaFotos = [];
-  var lightboxIndex = 0;
 
   var lbModal = document.getElementById('lightbox');
   var lbImg = document.getElementById('lb-img');
-  var lbCaption = document.getElementById('lb-caption');
+  var lbCap = document.getElementById('lb-caption');
   var lbClose = document.getElementById('lb-close');
   var lbPrev = document.getElementById('lb-prev');
   var lbNext = document.getElementById('lb-next');
 
-  function abrirLightbox(index){
-    if (index < 0 || index >= galeriaFotos.length) return;
-    lightboxIndex = index;
-    var item = galeriaFotos[index];
+  var galeriaFotos = [];
+  var lightboxIndex = 0;
+  var usuarioActual = null;
+  var eventoActual = null;
+
+  function abrirLightbox(idx){
+    if (!galeriaFotos.length) return;
+    lightboxIndex = idx;
+    var item = galeriaFotos[idx];
     lbImg.src = item.url;
-    lbCaption.textContent = (item.caption || ('Fotografía ' + (index + 1) + ' de ' + galeriaFotos.length));
+    lbImg.alt = item.caption || '';
+    lbCap.textContent = item.caption || '';
     lbModal.classList.add('active');
   }
 
@@ -198,7 +204,6 @@
     if (e.key === 'ArrowRight') abrirLightbox((lightboxIndex + 1) % galeriaFotos.length);
   });
 
-  // Cargar evento según parámetro ?id=...
   var params = new URLSearchParams(window.location.search);
   var targetId = params.get('id') || '';
   var contenedor = document.getElementById('contenedor-evento');
@@ -212,7 +217,6 @@
     });
 
     if (!ev && evs.length > 0){
-      // Si no hay ID exacto, toma el primero como fallback o error
       ev = evs[0];
     }
 
@@ -224,30 +228,13 @@
       return;
     }
 
+    eventoActual = ev;
     document.title = ev.titulo + ' · Xuexi Club UC';
 
     var d = fecha(ev.fecha);
     var est = esPasado(ev) ? {txt:'Ya realizado', cls:'e-lleno'} : (ESTADOS[ev.estado] || ESTADOS.pronto);
     var com = COMISIONES[ev.comision];
     var sello = com ? '<span class="ev-com"><span class="zh">' + com.zh + '</span> ' + com.nom + '</span>' : '';
-
-    // Todas las fotos de la galería. Si no hay ninguna, usamos la portada para
-    // que la subpágina no quede sin imagen.
-    var fotosIniciales = [];
-    if (ev.galeria && Array.isArray(ev.galeria) && ev.galeria.length > 0){
-      fotosIniciales = ev.galeria.map(comoArchivo).filter(Boolean);
-    }
-    if (!fotosIniciales.length && ev.imagen){
-      fotosIniciales = [ev.imagen];
-    }
-
-    galeriaFotos = fotosIniciales.map(function(f, idx){
-      return {
-        url: ruta(f, 'assets/'),
-        caption: ev.titulo + ' · Foto ' + (idx + 1) + ' de ' + fotosIniciales.length,
-        nombreArchivo: f
-      };
-    });
 
     var mediaPortada = ev.imagen
       ? '<img src="' + esc(ruta(ev.imagen, 'assets/')) + '" alt="' + esc(ev.titulo) + '">'
@@ -289,7 +276,6 @@
           '<span class="gallery-counter" id="fotos-counter">GALERÍA</span>' +
         '</div>' +
 
-        '<!-- PANTALLA PRINCIPAL EN GRANDE (STAGE) -->' +
         '<div class="ev-stage-box" id="ev-stage-box">' +
           '<div class="ev-stage-screen">' +
             '<img id="stage-img" class="ev-stage-img" src="" alt="">' +
@@ -306,18 +292,13 @@
           '</div>' +
         '</div>' +
 
-        '<!-- TIRA DE MINIATURAS EN SCROLL HORIZONTAL -->' +
         '<div class="ev-thumbs-track" id="gallery-thumbs-track"></div>' +
-
-        // Las fotos se cargan desde el panel de edición, que sí verifica
-        // permisos contra GitHub. Antes había aquí un "modo administrador"
-        // que se activaba con ?admin=1 en la URL: cualquiera podía ponerlo.
-        '<p class="gal-nota">Las fotografías las publica el equipo desde el <a href="admin/">panel de edición</a>.</p>' +
+        '<div id="admin-photo-container"></div>' +
+        '<p class="gal-nota">Las fotografías oficiales son publicadas por el equipo de coordinación.</p>' +
       '</div>';
 
     contenedor.innerHTML = html;
 
-    // Elementos del Stage
     var stageImg = document.getElementById('stage-img');
     var stageCount = document.getElementById('stage-count');
     var stageTitle = document.getElementById('stage-caption-title');
@@ -338,8 +319,7 @@
       stageCount.textContent = 'FOTOGRAFÍA ' + (currentStageIdx + 1) + ' DE ' + galeriaFotos.length;
       stageTitle.textContent = item.caption || ev.titulo;
 
-      // Actualizar estado de miniaturas
-      [].forEach.call(thumbsTrack.querySelectorAll('.ev-thumb-item:not(.pending)'), function(thumb, i){
+      [].forEach.call(thumbsTrack.querySelectorAll('.ev-thumb-item'), function(thumb, i){
         thumb.classList.toggle('active', i === currentStageIdx);
         if (i === currentStageIdx) {
           thumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
@@ -352,29 +332,238 @@
     stageImg.addEventListener('click', function(){ abrirLightbox(currentStageIdx); });
     stageBtnZoom.addEventListener('click', function(){ abrirLightbox(currentStageIdx); });
 
+    function cargarFotosCompletas(){
+      var fotosBase = [];
+      if (ev.galeria && Array.isArray(ev.galeria) && ev.galeria.length > 0){
+        fotosBase = ev.galeria.map(comoArchivo).filter(Boolean);
+      }
+      if (!fotosBase.length && ev.imagen){
+        fotosBase = [ev.imagen];
+      }
+
+      var listaInicial = fotosBase.map(function(f, idx){
+        return {
+          url: ruta(f, 'assets/'),
+          caption: ev.titulo + ' · Foto ' + (idx + 1),
+          nombreArchivo: f,
+          esDinamica: false
+        };
+      });
+
+      return window.XuexiAuth.obtenerFotosEvento(ev.id).then(function(fotosDinamicas){
+        var listaDinamica = (fotosDinamicas || []).map(function(fd){
+          return {
+            id: fd.id,
+            docId: fd.id,
+            url: fd.url,
+            caption: fd.caption || (ev.titulo + ' · Foto oficial'),
+            nombreArchivo: fd.nombreArchivo || '',
+            rutaStorage: fd.rutaStorage || '',
+            esDinamica: true
+          };
+        });
+
+        galeriaFotos = listaInicial.concat(listaDinamica);
+        renderGaleria();
+      }).catch(function(){
+        galeriaFotos = listaInicial;
+        renderGaleria();
+      });
+    }
+
     function renderGaleria(){
       counterEl.textContent = galeriaFotos.length +
         (galeriaFotos.length === 1 ? ' FOTOGRAFÍA' : ' FOTOGRAFÍAS');
 
-      // 1. Miniaturas reales existentes
+      var esAdmin = usuarioActual && usuarioActual.rol === 'admin';
+
       var htmlFotos = galeriaFotos.map(function(item, idx){
-        return '<div class="ev-thumb-item' + (idx === 0 ? ' active' : '') + '" data-idx="' + idx + '">' +
+        var btnBorrar = (esAdmin && item.esDinamica)
+          ? '<button type="button" class="thumb-del-btn" data-docid="' + esc(item.docId) + '" data-storage="' + esc(item.rutaStorage) + '" title="Eliminar foto">&times;</button>'
+          : '';
+
+        return '<div class="ev-thumb-item' + (idx === currentStageIdx ? ' active' : '') + '" data-idx="' + idx + '" style="position:relative;">' +
+          btnBorrar +
           '<img src="' + esc(item.url) + '" alt="' + esc(item.caption) + '" loading="lazy">' +
         '</div>';
       }).join('');
 
       thumbsTrack.innerHTML = htmlFotos;
-      setStagePhoto(0);
+      setStagePhoto(currentStageIdx);
 
-      [].forEach.call(thumbsTrack.querySelectorAll('.ev-thumb-item:not(.pending)'), function(thumb){
-        thumb.addEventListener('click', function(){
+      [].forEach.call(thumbsTrack.querySelectorAll('.ev-thumb-item'), function(thumb){
+        thumb.addEventListener('click', function(e){
+          if (e.target.classList.contains('thumb-del-btn')) return;
           var idx = parseInt(thumb.getAttribute('data-idx'), 10);
           setStagePhoto(idx);
         });
       });
+
+      [].forEach.call(thumbsTrack.querySelectorAll('.thumb-del-btn'), function(b){
+        b.addEventListener('click', function(e){
+          e.stopPropagation();
+          var docId = b.getAttribute('data-docid');
+          var rutaStorage = b.getAttribute('data-storage');
+          if (!confirm('¿Eliminar esta fotografía de la galería del evento?')) return;
+          window.XuexiAuth.eliminarFotoEvento(docId, rutaStorage).then(function(){
+            cargarFotosCompletas();
+          }).catch(function(err){
+            alert('No se pudo eliminar la foto: ' + err.message);
+          });
+        });
+      });
     }
 
-    renderGaleria();
+    function inicializarPanelAdmin(user){
+      var container = document.getElementById('admin-photo-container');
+      if (!container) return;
+      if (!user || user.rol !== 'admin'){
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = '' +
+        '<div class="admin-photo-panel">' +
+          '<div class="admin-photo-head">' +
+            '<h4><span class="zh">相册管理</span> Panel de Administración · Subir Fotos</h4>' +
+            '<span class="admin-badge-direct">Acceso Coordinación</span>' +
+          '</div>' +
+          '<div class="admin-drop-zone" id="admin-drop-zone">' +
+            '<div class="admin-drop-icon">📸</div>' +
+            '<p class="admin-drop-text"><b>Arrastra fotos aquí</b> o haz clic para seleccionarlas</p>' +
+            '<p class="admin-drop-hint">Formatos JPG, PNG, WEBP. Se publican de inmediato en la galería.</p>' +
+            '<input type="file" id="admin-file-input" class="admin-upload-input" accept="image/*" multiple>' +
+          '</div>' +
+          '<div class="admin-preview-list" id="admin-preview-list" style="display:none;"></div>' +
+          '<div class="admin-upload-controls" id="admin-upload-controls" style="display:none;">' +
+            '<button type="button" class="btn btn-sello" id="btn-do-upload"><span class="zh">上传</span> Subir a la galería</button>' +
+            '<button type="button" class="btn btn-outline" id="btn-cancel-upload">Cancelar</button>' +
+            '<span id="upload-status-text" style="font-size:.82rem;color:var(--gold);margin-left:auto;"></span>' +
+          '</div>' +
+          '<div class="admin-upload-progress" id="admin-upload-progress" style="display:none;">' +
+            '<div class="admin-upload-bar" id="admin-upload-bar"></div>' +
+          '</div>' +
+        '</div>';
+
+      var dropZone = document.getElementById('admin-drop-zone');
+      var fileInput = document.getElementById('admin-file-input');
+      var previewList = document.getElementById('admin-preview-list');
+      var uploadControls = document.getElementById('admin-upload-controls');
+      var btnDoUpload = document.getElementById('btn-do-upload');
+      var btnCancel = document.getElementById('btn-cancel-upload');
+      var statusText = document.getElementById('upload-status-text');
+      var progressBox = document.getElementById('admin-upload-progress');
+      var progressBar = document.getElementById('admin-upload-bar');
+
+      var archivosSeleccionados = [];
+
+      function actualizarPreviews(){
+        if (!archivosSeleccionados.length){
+          previewList.style.display = 'none';
+          uploadControls.style.display = 'none';
+          previewList.innerHTML = '';
+          return;
+        }
+
+        previewList.style.display = 'flex';
+        uploadControls.style.display = 'flex';
+        statusText.textContent = archivosSeleccionados.length + ' foto(s) lista(s) para subir';
+
+        previewList.innerHTML = '';
+        archivosSeleccionados.forEach(function(file, i){
+          var thumb = document.createElement('div');
+          thumb.className = 'admin-preview-thumb';
+          var img = document.createElement('img');
+          img.src = URL.createObjectURL(file);
+          var btnRem = document.createElement('button');
+          btnRem.className = 'admin-preview-remove';
+          btnRem.innerHTML = '&times;';
+          btnRem.addEventListener('click', function(){
+            archivosSeleccionados.splice(i, 1);
+            actualizarPreviews();
+          });
+          thumb.appendChild(img);
+          thumb.appendChild(btnRem);
+          previewList.appendChild(thumb);
+        });
+      }
+
+      dropZone.addEventListener('click', function(){ fileInput.click(); });
+      dropZone.addEventListener('dragover', function(e){ e.preventDefault(); dropZone.classList.add('dragover'); });
+      dropZone.addEventListener('dragleave', function(){ dropZone.classList.remove('dragover'); });
+      dropZone.addEventListener('drop', function(e){
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+          archivosSeleccionados = archivosSeleccionados.concat(Array.from(e.dataTransfer.files));
+          actualizarPreviews();
+        }
+      });
+
+      fileInput.addEventListener('change', function(){
+        if (fileInput.files && fileInput.files.length){
+          archivosSeleccionados = archivosSeleccionados.concat(Array.from(fileInput.files));
+          actualizarPreviews();
+        }
+      });
+
+      btnCancel.addEventListener('click', function(){
+        archivosSeleccionados = [];
+        actualizarPreviews();
+      });
+
+      btnDoUpload.addEventListener('click', function(){
+        if (!archivosSeleccionados.length) return;
+        btnDoUpload.disabled = true;
+        btnCancel.disabled = true;
+        progressBox.style.display = 'block';
+        progressBar.style.width = '5%';
+        statusText.textContent = 'Subiendo 0 de ' + archivosSeleccionados.length + '...';
+
+        var subidos = 0;
+        var total = archivosSeleccionados.length;
+
+        function subirSiguiente(i){
+          if (i >= total){
+            progressBar.style.width = '100%';
+            statusText.textContent = '¡' + total + ' foto(s) subidas con éxito!';
+            setTimeout(function(){
+              archivosSeleccionados = [];
+              actualizarPreviews();
+              progressBox.style.display = 'none';
+              btnDoUpload.disabled = false;
+              btnCancel.disabled = false;
+              cargarFotosCompletas();
+            }, 1200);
+            return;
+          }
+
+          var file = archivosSeleccionados[i];
+          statusText.textContent = 'Subiendo ' + (i + 1) + ' de ' + total + ' (' + file.name + ')...';
+
+          window.XuexiAuth.subirFotoEvento(ev.id, file, ev.titulo, function(pct){
+            var generalPct = Math.round(((i + (pct / 100)) / total) * 100);
+            progressBar.style.width = generalPct + '%';
+          }).then(function(){
+            subidos++;
+            subirSiguiente(i + 1);
+          }).catch(function(err){
+            alert('Error al subir ' + file.name + ': ' + err.message);
+            subirSiguiente(i + 1);
+          });
+        }
+
+        subirSiguiente(0);
+      });
+    }
+
+    cargarFotosCompletas();
+
+    window.XuexiAuth.onAuth(function(user){
+      usuarioActual = user;
+      renderGaleria();
+      inicializarPanelAdmin(user);
+    });
 
   }).catch(function(err){
     console.error(err);

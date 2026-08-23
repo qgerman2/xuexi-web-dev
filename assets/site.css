@@ -1044,3 +1044,42 @@ footer{border-top:1px solid var(--line);padding:clamp(34px,5vw,58px) 0 40px}
 .gal-nota{font-size:.78rem;color:var(--cream-faint);text-align:center;
   margin-top:18px;padding-top:14px;border-top:1px dashed var(--line)}
 .gal-nota a{color:var(--gold);text-decoration:underline;text-underline-offset:2px}
+
+/* ── Gestor y Cargador Directo de Fotos para Admins ── */
+.admin-photo-panel{background:linear-gradient(135deg,rgba(40,15,15,.88),rgba(20,14,14,.95));
+  border:1px solid rgba(212,175,97,.35);border-radius:var(--r);padding:20px 24px;
+  margin-top:24px;box-shadow:0 10px 30px -10px rgba(0,0,0,.6)}
+.admin-photo-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.admin-photo-head h4{font-family:var(--serif);font-size:1.15rem;color:var(--cream);margin:0;display:flex;align-items:center;gap:8px}
+.admin-photo-head .zh{color:var(--gold)}
+.admin-badge-direct{background:rgba(192,57,43,.25);border:1px solid var(--gold);color:var(--gold);
+  font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:20px;font-weight:700}
+
+.admin-drop-zone{border:2px dashed rgba(212,175,97,.4);border-radius:var(--r);padding:24px 16px;
+  text-align:center;background:rgba(20,14,14,.5);cursor:pointer;transition:all .25s ease}
+.admin-drop-zone:hover,.admin-drop-zone.dragover{border-color:var(--gold);background:rgba(212,175,97,.08);
+  box-shadow:0 0 20px -5px rgba(212,175,97,.25)}
+.admin-drop-icon{font-size:2rem;line-height:1;margin-bottom:8px;color:var(--gold)}
+.admin-drop-text{font-size:.85rem;color:var(--cream-dim);margin:0 0 4px}
+.admin-drop-hint{font-size:.72rem;color:var(--cream-faint);margin:0}
+
+.admin-upload-controls{margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.admin-upload-input{display:none}
+
+.admin-preview-list{display:flex;gap:10px;overflow-x:auto;padding:12px 0 6px}
+.admin-preview-thumb{position:relative;flex:0 0 80px;aspect-ratio:1;border-radius:4px;overflow:hidden;
+  border:1px solid rgba(212,175,97,.3);background:var(--ink)}
+.admin-preview-thumb img{width:100%;height:100%;object-fit:cover}
+.admin-preview-remove{position:absolute;top:2px;right:2px;background:rgba(192,57,43,.9);color:#FFF;
+  border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:grid;place-items:center}
+
+.admin-upload-progress{width:100%;background:rgba(20,14,14,.8);border:1px solid var(--line);
+  border-radius:10px;height:8px;overflow:hidden;margin-top:10px}
+.admin-upload-bar{height:100%;background:linear-gradient(90deg,var(--granate),var(--gold));
+  width:0%;transition:width .2s ease}
+
+.thumb-del-btn{position:absolute;top:4px;right:4px;background:rgba(192,57,43,.9);color:#FFF;
+  border:1px solid rgba(255,255,255,.3);border-radius:50%;width:22px;height:22px;
+  font-size:11px;cursor:pointer;display:grid;place-items:center;z-index:10;transition:transform .2s}
+.thumb-del-btn:hover{transform:scale(1.15);background:var(--vermilion-deep)}
+

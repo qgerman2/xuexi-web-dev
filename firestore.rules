@@ -73,6 +73,14 @@ service cloud.firestore {
       allow write: if esCoordinacion();
     }
 
+    // ────────────────────────── Fotos de eventos ──────────────────────────
+    match /fotos_eventos/{doc} {
+      // Todo el público puede ver las fotos de la galería
+      allow read: if true;
+      // Solo la coordinación (admin) puede subir o eliminar fotos
+      allow create, update, delete: if esCoordinacion();
+    }
+
     // Todo lo que no esté nombrado arriba queda cerrado.
     match /{document=**} {
       allow read, write: if false;

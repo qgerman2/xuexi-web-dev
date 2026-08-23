@@ -139,9 +139,14 @@
   </div>
 </footer>
 
-<script src="assets/nav.js?v=12"></script>
-<script src="assets/auth.js?v=12"></script>
-<script src="assets/datos.js?v=12"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/nav.js?v=13"></script>
+<script src="assets/auth.js?v=13"></script>
+<script src="assets/datos.js?v=13"></script>
 <script>
 (function(){
   document.getElementById('anio').textContent = new Date().getFullYear();
@@ -158,24 +163,21 @@
   function ruta(valor, carpeta){
     var v = String(valor || '').trim();
     if (!v) return '';
-    if (/^(https?:)?\/\//.test(v)) return v;
+    if (/^(https?:)?\/\//.test(v) || /^data:image/.test(v)) return v;
     return v.indexOf('/') !== -1 ? v.replace(/^\//, '') : carpeta + v;
   }
 
-  // El panel puede guardar cada foto como texto ("foto.jpg") o, según el
-  // widget, como objeto ({foto:"assets/foto.jpg"}). Aceptamos las dos formas
-  // para que no dependa de cómo se creó la entrada.
   function comoArchivo(f){
-    if (typeof f === 'string') return f;
-    if (f && typeof f === 'object'){
-      var k = Object.keys(f)[0];
-      return k ? String(f[k]) : '';
-    }
+    if (!f) return '';
+    if (typeof f === 'string') return f.trim();
+    if (typeof f === 'object' && f.foto) return String(f.foto).trim();
     return '';
   }
 
   function fecha(iso){
+    if (!iso) return new Date();
     var p = String(iso).split('-');
+    if (p.length < 3) return new Date(iso);
     return new Date(+p[0], +p[1] - 1, +p[2]);
   }
 
@@ -281,25 +283,31 @@
     });
   }
 
-  // Load data
-  window.cargarEventos().then(function(data){
+  // Load data: eventos.json + fotos_eventos de Firestore
+  Promise.all([
+    window.cargarEventos().catch(function(){ return {eventos:[]}; }),
+    window.XuexiAuth.obtenerTodasLasFotosEventos().catch(function(){ return []; })
+  ]).then(function(res){
+    var data = res[0] || {};
+    var dinamicas = res[1] || [];
     var evs = data.eventos || [];
     var tiposPresentes = {};
+    var mapEv = {};
 
     evs.forEach(function(ev){
+      var evId = ev.id || encodeURIComponent(ev.titulo);
+      mapEv[evId] = ev;
+      if (ev.tipo) tiposPresentes[ev.tipo] = true;
+
       var fotos = [];
       if (ev.galeria && Array.isArray(ev.galeria) && ev.galeria.length){
         fotos = ev.galeria.map(comoArchivo).filter(Boolean);
       } else if (ev.imagen && ev.imagen.trim()){
         fotos = [ev.imagen];
       }
-      if (!fotos.length) return;
 
       var d = fecha(ev.fecha);
       var fechaTxt = d.getDate() + ' ' + MESES_CORTO[d.getMonth()] + ' ' + d.getFullYear();
-      var evId = ev.id || encodeURIComponent(ev.titulo);
-
-      if (ev.tipo) tiposPresentes[ev.tipo] = true;
 
       fotos.forEach(function(f){
         todasLasFotos.push({
@@ -311,6 +319,24 @@
           fechaObj: d,
           eventoId: evId
         });
+      });
+    });
+
+    // Agregar fotos subidas dinámicamente
+    dinamicas.forEach(function(fd){
+      var ev = mapEv[fd.eventoId] || {};
+      var d = fd.fecha && fd.fecha.toDate ? fd.fecha.toDate() : (ev.fecha ? fecha(ev.fecha) : new Date());
+      var fechaTxt = d.getDate() + ' ' + MESES_CORTO[d.getMonth()] + ' ' + d.getFullYear();
+      if (ev.tipo) tiposPresentes[ev.tipo] = true;
+
+      todasLasFotos.push({
+        url: fd.url,
+        titulo: ev.titulo || fd.caption || 'Actividad Xuexi',
+        tipo: ev.tipo || 'social',
+        hanzi: ev.hanzi || '学',
+        fechaTxt: fechaTxt,
+        fechaObj: d,
+        eventoId: fd.eventoId || 'general'
       });
     });
 

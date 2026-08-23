@@ -169,18 +169,125 @@
   // coordinación. Si alguien pudiera marcarse "al día" solo, no significaría
   // nada. Las reglas de Firestore también lo impiden del lado del servidor.
 
+  // ──────────────────────── Fotos de eventos ────────────────────────
+  // Permite a la coordinación subir fotos directamente desde la web.
+
+  function subirFotoEvento(eventoId, file, caption, onProgreso){
+    if (!listo && !iniciar()) return noDisponible();
+    if (!auth.currentUser) return Promise.reject(new Error('Debes iniciar sesión como administrador.'));
+
+    var storage = null;
+    try { storage = firebase.storage(); } catch(e){}
+
+    var cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    var rutaStorage = 'eventos/' + (eventoId || 'general') + '/' + Date.now() + '_' + cleanName;
+
+    function guardarEnFirestore(url){
+      return db.collection('fotos_eventos').add({
+        eventoId: eventoId || '',
+        url: url,
+        caption: caption || '',
+        nombreArchivo: file.name,
+        rutaStorage: rutaStorage,
+        creadoPor: auth.currentUser.uid,
+        creadoPorEmail: auth.currentUser.email || '',
+        fecha: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function(docRef){
+        return {
+          id: docRef.id,
+          eventoId: eventoId,
+          url: url,
+          caption: caption || '',
+          nombreArchivo: file.name
+        };
+      });
+    }
+
+    if (storage) {
+      var ref = storage.ref(rutaStorage);
+      var uploadTask = ref.put(file);
+
+      return new Promise(function(resolve, reject){
+        uploadTask.on('state_changed',
+          function(snap){
+            if (typeof onProgreso === 'function' && snap.totalBytes > 0){
+              var pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+              onProgreso(pct);
+            }
+          },
+          function(err){
+            // Fallback a compresión Base64 / Data URL si storage tuviese error de CORS
+            var reader = new FileReader();
+            reader.onload = function(e){
+              guardarEnFirestore(e.target.result).then(resolve).catch(reject);
+            };
+            reader.onerror = function(){ reject(err); };
+            reader.readAsDataURL(file);
+          },
+          function(){
+            uploadTask.snapshot.ref.getDownloadURL().then(function(url){
+              guardarEnFirestore(url).then(resolve).catch(reject);
+            }).catch(reject);
+          }
+        );
+      });
+    } else {
+      // Fallback si Storage SDK no está cargado: DataURL en Firestore
+      return new Promise(function(resolve, reject){
+        var reader = new FileReader();
+        reader.onload = function(e){
+          guardarEnFirestore(e.target.result).then(resolve).catch(reject);
+        };
+        reader.onerror = function(err){ reject(err); };
+        reader.readAsDataURL(file);
+      });
+    }
+  }
+
+  function obtenerFotosEvento(eventoId){
+    if (!listo && !iniciar()) return Promise.resolve([]);
+    var q = db.collection('fotos_eventos');
+    if (eventoId) {
+      q = q.where('eventoId', '==', eventoId);
+    }
+    return q.get()
+      .then(function(snap){
+        var lista = [];
+        snap.forEach(function(doc){
+          var d = doc.data();
+          d.id = doc.id;
+          lista.push(d);
+        });
+        return lista;
+      })
+      .catch(function(){ return []; });
+  }
+
+  function eliminarFotoEvento(docId, rutaStorage){
+    if (!listo && !iniciar()) return noDisponible();
+    var storage = null;
+    try { storage = firebase.storage(); } catch(e){}
+
+    var pStorage = Promise.resolve();
+    if (storage && rutaStorage){
+      pStorage = storage.ref(rutaStorage).delete().catch(function(){});
+    }
+
+    return pStorage.then(function(){
+      return db.collection('fotos_eventos').doc(docId).delete();
+    });
+  }
+
+  function obtenerTodasLasFotosEventos(){
+    return obtenerFotosEvento('');
+  }
+
   // ──────────────────────── Enlace en el menú ────────────────────────
 
   function actualizarNav(){
-    // La entrada ya viene escrita en el HTML de cada página, así que aparece
-    // aunque el JavaScript tarde. Aquí solo cambia según haya sesión o no.
     var item = document.getElementById('nav-item-cuenta');
     if (!item) return;
 
-    // La entrada se muestra siempre: es un enlace a login.html, que funciona en
-    // cualquier página. Antes se ocultaba cuando Firebase no estaba iniciado,
-    // pero el SDK solo se carga en login, registro y miembro — así que
-    // desaparecía del resto del sitio.
     item.hidden = false;
     if (!listo && !iniciar()) return;
 
@@ -200,6 +307,10 @@
     registrar: registrar,
     obtenerCalendarioInterno: obtenerCalendarioInterno,
     obtenerConfigMembresia: obtenerConfigMembresia,
+    subirFotoEvento: subirFotoEvento,
+    obtenerFotosEvento: obtenerFotosEvento,
+    eliminarFotoEvento: eliminarFotoEvento,
+    obtenerTodasLasFotosEventos: obtenerTodasLasFotosEventos,
     actualizarNav: actualizarNav
   };
 

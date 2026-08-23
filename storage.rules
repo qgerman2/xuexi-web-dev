@@ -1,0 +1,11 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Las fotos de eventos son públicas para lectura
+    match /eventos/{allPaths=**} {
+      allow read: if true;
+      // Solo usuarios autenticados pueden subir fotos (la validación de rol admin se efectúa en Firestore)
+      allow write: if request.auth != null;
+    }
+  }
+}
