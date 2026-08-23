@@ -6,7 +6,7 @@
 <title>Detalle del Evento · Xuexi Club UC</title>
 <meta name="description" content="Detalle del evento y galería de fotos del Xuexi Club UC, el club de Lengua, Cultura y Estudios sobre China de la Pontificia Universidad Católica de Chile.">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/site.css?v=12">
+<link rel="stylesheet" href="assets/site.css?v=14">
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -423,25 +423,25 @@
       }
 
       container.innerHTML = '' +
-        '<div class="admin-photo-panel">' +
-          '<div class="admin-photo-head">' +
-            '<h4><span class="zh">相册管理</span> Panel de Administración · Subir Fotos</h4>' +
-            '<span class="admin-badge-direct">Acceso Coordinación</span>' +
+        '<div class="admin-photo-panel" style="background:linear-gradient(135deg,rgba(40,15,15,.95),rgba(20,14,14,.98));border:1px solid rgba(212,175,97,.4);border-radius:var(--r);padding:24px;margin-top:24px;box-shadow:0 10px 30px -10px rgba(0,0,0,.6);">' +
+          '<div class="admin-photo-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">' +
+            '<h4 style="font-family:var(--serif);font-size:1.15rem;color:var(--cream);margin:0;display:flex;align-items:center;gap:8px;"><span class="zh" style="color:var(--gold);">相册管理</span> Panel de Administración · Subir Fotos</h4>' +
+            '<span class="admin-badge-direct" style="background:rgba(192,57,43,.25);border:1px solid var(--gold);color:var(--gold);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:20px;font-weight:700;">Acceso Coordinación</span>' +
           '</div>' +
-          '<div class="admin-drop-zone" id="admin-drop-zone">' +
-            '<div class="admin-drop-icon">📸</div>' +
-            '<p class="admin-drop-text"><b>Arrastra fotos aquí</b> o haz clic para seleccionarlas</p>' +
-            '<p class="admin-drop-hint">Formatos JPG, PNG, WEBP. Se publican de inmediato en la galería.</p>' +
-            '<input type="file" id="admin-file-input" class="admin-upload-input" accept="image/*" multiple>' +
+          '<div class="admin-drop-zone" id="admin-drop-zone" style="border:2px dashed rgba(212,175,97,.45);border-radius:var(--r);padding:26px 16px;text-align:center;background:rgba(20,14,14,.55);cursor:pointer;transition:all .25s ease;">' +
+            '<div class="admin-drop-icon" style="font-size:2.2rem;line-height:1;margin-bottom:8px;color:var(--gold);">📸</div>' +
+            '<p class="admin-drop-text" style="font-size:.88rem;color:var(--cream-dim);margin:0 0 6px;"><b>Arrastra fotos aquí</b> o haz clic para seleccionarlas</p>' +
+            '<p class="admin-drop-hint" style="font-size:.74rem;color:var(--cream-faint);margin:0;">Formatos JPG, PNG, WEBP. Se publican de inmediato en la galería.</p>' +
+            '<input type="file" id="admin-file-input" class="admin-upload-input" accept="image/*" multiple style="display:none !important;">' +
           '</div>' +
           '<div class="admin-preview-list" id="admin-preview-list" style="display:none;"></div>' +
-          '<div class="admin-upload-controls" id="admin-upload-controls" style="display:none;">' +
+          '<div class="admin-upload-controls" id="admin-upload-controls" style="display:none;margin-top:16px;align-items:center;gap:12px;flex-wrap:wrap;">' +
             '<button type="button" class="btn btn-sello" id="btn-do-upload"><span class="zh">上传</span> Subir a la galería</button>' +
             '<button type="button" class="btn btn-outline" id="btn-cancel-upload">Cancelar</button>' +
             '<span id="upload-status-text" style="font-size:.82rem;color:var(--gold);margin-left:auto;"></span>' +
           '</div>' +
-          '<div class="admin-upload-progress" id="admin-upload-progress" style="display:none;">' +
-            '<div class="admin-upload-bar" id="admin-upload-bar"></div>' +
+          '<div class="admin-upload-progress" id="admin-upload-progress" style="display:none;width:100%;background:rgba(20,14,14,.8);border:1px solid var(--line);border-radius:10px;height:8px;overflow:hidden;margin-top:12px;">' +
+            '<div class="admin-upload-bar" id="admin-upload-bar" style="height:100%;background:linear-gradient(90deg,var(--granate),var(--gold));width:0%;transition:width .2s ease;"></div>' +
           '</div>' +
         '</div>';
 
