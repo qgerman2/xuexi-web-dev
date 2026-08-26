@@ -74,6 +74,80 @@
     });
   }
 
+  // ── Creación masiva: un código por persona ──
+  // Acepta una lista pegada desde una planilla o escrita a mano. De cada línea
+  // toma lo que parezca correo y el resto como nombre.
+  function parsearLinea(linea){
+    var partes = linea.split(/[\t,;]+/).map(function(s){ return s.trim(); }).filter(Boolean);
+    var correo = '', nombre = [];
+    partes.forEach(function(p){
+      if (!correo && p.indexOf('@') !== -1) correo = p; else nombre.push(p);
+    });
+    return { nombre: nombre.join(' ').trim(), correo: correo };
+  }
+
+  function crearLote(){
+    var caja = document.getElementById('coord-lote-resultado');
+    var texto = document.getElementById('coord-lote-lista').value;
+    // Las líneas que empiezan con # son títulos de sección, no personas.
+    var lineas = texto.split('\n')
+      .map(function(l){ return l.trim(); })
+      .filter(function(l){ return l && l.charAt(0) !== '#'; });
+
+    if (!lineas.length){
+      caja.innerHTML = '<p class="coord-aviso coord-error">Pega al menos una línea con un nombre.</p>';
+      return;
+    }
+    if (lineas.length > 200){
+      caja.innerHTML = '<p class="coord-aviso coord-error">Son demasiadas de una vez. Hazlo en tandas de 200.</p>';
+      return;
+    }
+    if (!confirm('Se crearán ' + lineas.length + ' códigos, uno por línea. ¿Continuar?')) return;
+
+    caja.innerHTML = 'Creando ' + lineas.length + ' códigos…';
+    var personas = lineas.map(parsearLinea);
+    var lote = db.batch();
+
+    personas.forEach(function(p){
+      p.codigo = generarCodigo();
+      lote.set(db.collection('codigos_invitacion').doc(p.codigo), {
+        usado: false,
+        nota: p.nombre + (p.correo ? ' · ' + p.correo : ''),
+        creadoPor: usuario.uid,
+        fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+
+    lote.commit().then(function(){
+      // Separado por tabulaciones: al pegarlo en Google Sheets cae en columnas.
+      var tsv = 'Nombre\tCorreo\tCodigo\n' + personas.map(function(p){
+        return p.nombre + '\t' + p.correo + '\t' + p.codigo;
+      }).join('\n');
+
+      caja.innerHTML = '<p class="coord-ok">Listos los ' + personas.length + ' códigos.</p>' +
+        '<button class="coord-btn-mini" id="coord-copiar-tsv">Copiar para pegar en la planilla</button>' +
+        '<span class="coord-sub" id="coord-copiado"></span>' +
+        '<table class="coord-tabla"><thead><tr><th>Nombre</th><th>Correo</th><th>Código</th></tr></thead><tbody>' +
+        personas.map(function(p){
+          return '<tr><td>' + esc(p.nombre) + '</td><td>' + esc(p.correo || '—') + '</td>' +
+                 '<td><code>' + esc(p.codigo) + '</code></td></tr>';
+        }).join('') + '</tbody></table>';
+
+      document.getElementById('coord-copiar-tsv').addEventListener('click', function(){
+        navigator.clipboard.writeText(tsv).then(function(){
+          document.getElementById('coord-copiado').textContent = ' ✓ Copiado';
+        }).catch(function(){
+          document.getElementById('coord-copiado').textContent = ' No se pudo copiar; selecciona la tabla a mano.';
+        });
+      });
+
+      document.getElementById('coord-lote-lista').value = '';
+      listarCodigos();
+    }).catch(function(e){
+      caja.innerHTML = '<p class="coord-aviso coord-error">No se pudieron crear: ' + esc(e.message) + '</p>';
+    });
+  }
+
   function crearCodigo(){
     var nota = document.getElementById('coord-codigo-nota').value.trim();
     var codigo = generarCodigo();
@@ -278,6 +352,17 @@
           '<button class="btn btn-sello" id="coord-crear-codigo">Crear código</button>' +
         '</div>' +
         '<div id="coord-codigo-nuevo"></div>' +
+
+        '<div class="coord-import">' +
+          '<h4 class="coord-sub-h">Crear varios de una vez</h4>' +
+          '<p class="coord-desc">Una persona por línea: nombre y, si lo tienes, su correo. ' +
+            'Puedes pegar directamente desde una planilla.</p>' +
+          '<textarea id="coord-lote-lista" rows="6" ' +
+            'placeholder="Andrea Díaz Inzunza, adi@uc.cl&#10;Catalina Leiva Gutiérrez, cleivg@uc.cl&#10;Nathaly Jeria Cabello"></textarea>' +
+          '<button class="btn btn-sello" id="coord-crear-lote">Crear un código por persona</button>' +
+          '<div id="coord-lote-resultado"></div>' +
+        '</div>' +
+
         '<div id="coord-codigos-lista"></div>' +
       '</div>' +
 
@@ -325,6 +410,7 @@
       '</div>';
 
     document.getElementById('coord-crear-codigo').addEventListener('click', crearCodigo);
+    document.getElementById('coord-crear-lote').addEventListener('click', crearLote);
     document.getElementById('coord-agregar-evento').addEventListener('click', agregarEvento);
     document.getElementById('coord-importar').addEventListener('click', importarPlan);
 
