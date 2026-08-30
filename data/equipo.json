@@ -16,12 +16,12 @@
       },
       {
         "cargo": "Vicepresidencia",
-        "nombre": "Catalina Leiva Gutiérrez",
+        "nombre": "Diego Urzúa Escobar",
         "hanzi": "",
-        "carrera": "Ciencia Política UC",
+        "carrera": "Psicólogo UC, Magíster en Psicología Educacional UC.",
         "email": "",
-        "equipo": "Equipo Wailian",
-        "foto": ""
+        "equipo": "Equipo Xinxi, Club de Lectura",
+        "foto": "assets/equipo/diego.jpg"
       },
       {
         "cargo": "Secretaría",
@@ -78,15 +78,6 @@
         "carrera": "Psicología UC",
         "email": "",
         "foto": "assets/equipo/whatsapp-image-2026-08-16-at-21.16.15.jpeg"
-      },
-      {
-        "cargo": "Coordinación externa",
-        "comision": "lectura",
-        "nombre": "Diego Urzúa Escobar",
-        "hanzi": "",
-        "carrera": "Psicólogo UC · Magíster en Psicología Educacional UC",
-        "email": "",
-        "foto": "diego.jpg"
       }
     ]
   },
