@@ -1086,3 +1086,7 @@ footer{border-top:1px solid var(--line);padding:clamp(34px,5vw,58px) 0 40px}
 .coord-sub-h{font-family:var(--serif);font-size:1rem;margin:0 0 4px}
 #coord-lote-lista{width:100%;min-height:120px;resize:vertical;margin-bottom:10px;
   font-family:var(--mono);font-size:.8rem;line-height:1.6}
+
+/* Estado de cuota aún no sincronizado */
+.pay-status-badge.badge-proximamente{background:rgba(212,175,97,.16);
+  border:1px solid var(--gold-deep);color:var(--gold)}

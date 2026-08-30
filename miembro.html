@@ -6,7 +6,7 @@
 <title>Portal de Miembros · Xuexi Club UC</title>
 <meta name="description" content="Calendario interno de actividades y recursos para integrantes del Xuexi Club UC.">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/site.css?v=15">
+<link rel="stylesheet" href="assets/site.css?v=16">
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -162,9 +162,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 <script src="assets/firebase-config.js"></script>
-<script src="assets/nav.js?v=15"></script>
-<script src="assets/auth.js?v=15"></script>
-<script src="assets/coordinacion.js?v=15"></script>
+<script src="assets/nav.js?v=16"></script>
+<script src="assets/auth.js?v=16"></script>
+<script src="assets/coordinacion.js?v=16"></script>
 <script>
 (function(){
   document.getElementById('anio').textContent = new Date().getFullYear();
@@ -417,58 +417,37 @@
     var payBox = document.getElementById('payment-status-box');
     if (!payBox) return;
 
-    var params = new URLSearchParams(window.location.search);
-    var estadoUrl = params.get('estado'); // ?estado=pendiente o ?estado=al_dia
-    var tipoUrl = params.get('tipo');     // ?tipo=region o ?tipo=general
+    // El estado de cuota todavía no está sincronizado con la contabilidad del
+    // club, así que no mostramos ninguno. Antes esta tarjeta caía por defecto
+    // en "Al día" cuando no había dato, y también se podía forzar escribiendo
+    // ?estado=al_dia en la dirección: en ambos casos decía algo que no constaba.
+    var general = (config && config.textoMontoGeneral) || '$2.000 CLP (General / RM)';
+    var region  = (config && config.textoMontoRegion)  || '$1.000 CLP (Regiones)';
+    var linkGen = (config && config.linkMercadoPagoGeneral) || '';
+    var linkReg = (config && config.linkMercadoPagoRegion)  || '';
 
-    var estado = estadoUrl || (user && user.estadoPago) || localStorage.getItem('xuexi_payment_status') || 'al_dia';
-    var esRegion = tipoUrl === 'region' || (user && (user.tipoMembresia === 'region' || user.region || user.esRegion));
+    function boton(link, texto, clase, hanzi){
+      if (!link) return '';
+      return '<a href="' + esc(link) + '" target="_blank" rel="noopener" class="' + clase + '">' +
+        '<span class="zh">' + hanzi + '</span> <span>' + esc(texto) + '</span></a>';
+    }
 
-    var linkGen = (config && config.linkMercadoPagoGeneral) || 'https://mpago.li/xuexi-general-2k';
-    var linkReg = (config && config.linkMercadoPagoRegion) || 'https://mpago.li/xuexi-region-1k';
+    var botones = boton(linkGen, 'Pagar ' + general, 'pay-btn-gold', '付费') +
+                  boton(linkReg, 'Pagar ' + region,  'pay-btn-jade', '地域');
 
-    var isAlDia = estado === 'al_dia';
-    var isPendiente = estado === 'pendiente';
-
-    var badgeCls = isAlDia ? 'badge-al-dia' : (isPendiente ? 'badge-pendiente' : 'badge-vencida');
-    var badgeTxt = isAlDia ? 'Membresía Al Día' : (isPendiente ? 'Cuota Pendiente' : 'Cuota Vencida');
-    var cardCls = isAlDia ? 'al-dia' : (isPendiente ? 'pendiente' : 'vencida');
-
-    var hoy = new Date();
-    var proxMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, (config && config.diaCobro) || 5);
-    var proxFechaTxt = proxMes.getDate() + ' de ' + MESES[proxMes.getMonth()] + ' de ' + proxMes.getFullYear();
-
-    var tipoNombre = esRegion ? 'Membresía Regiones ($1.000/mes)' : 'Membresía General / RM ($2.000/mes)';
-    var subText = isAlDia 
-      ? 'Tu cuota (' + tipoNombre + ') está al día. Próxima renovación: ' + proxFechaTxt + '.'
-      : 'Tienes una cuota de ' + tipoNombre + ' pendiente por regularizar.';
-
-    var btnHtml = esRegion
-      ? '<a href="' + esc(linkReg) + '" target="_blank" rel="noopener" class="pay-btn-jade" id="btn-pay-reg">' +
-          '<span class="zh" style="color:#A3E4D7;">地域</span> <span>Pagar $1.000 CLP (Regiones)</span>' +
-        '</a>'
-      : '<a href="' + esc(linkGen) + '" target="_blank" rel="noopener" class="pay-btn-gold" id="btn-pay-gen">' +
-          '<span class="zh" style="color:var(--gold);">付费</span> <span>Pagar $2.000 CLP (General / RM)</span>' +
-        '</a>';
-
-    var htmlActions = isAlDia
-      ? '<div class="pay-actions-group">' +
-          '<span style="font-size:.84rem;color:#A3E4D7;background:rgba(46,125,107,.25);border:1px solid rgba(55,145,123,.5);padding:9px 18px;border-radius:50px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">' +
-            '✓ Membresía Vigente y Activa' +
-          '</span>' +
-        '</div>'
-      : '<div class="pay-actions-group">' + btnHtml + '</div>';
-
-    payBox.innerHTML = '<div class="payment-card-status ' + cardCls + '">' +
+    payBox.innerHTML = '<div class="payment-card-status pendiente">' +
       '<div class="pay-status-info">' +
         '<div class="pay-seal-icon">印</div>' +
         '<div>' +
-          '<span class="pay-status-badge ' + badgeCls + '">' + badgeTxt + '</span>' +
-          '<h3 class="pay-status-title"><span class="zh">会费</span>Acreditación y Cuotas de Membresía</h3>' +
-          '<p class="pay-status-sub">' + esc(subText) + '</p>' +
+          '<span class="pay-status-badge badge-proximamente">En preparación</span>' +
+          '<h3 class="pay-status-title"><span class="zh">会费</span>Cuotas de membresía</h3>' +
+          '<p class="pay-status-sub">Pronto incluiremos aquí tu estado actual de cuota. ' +
+            'Estamos sincronizando los registros con la tesorería del club.</p>' +
+          (botones ? '<p class="pay-status-sub" style="margin-top:6px">Si quieres adelantar tu pago, ' +
+            'puedes hacerlo desde aquí: ' + esc(general) + ' o ' + esc(region) + '.</p>' : '') +
         '</div>' +
       '</div>' +
-      htmlActions +
+      (botones ? '<div class="pay-actions-group">' + botones + '</div>' : '') +
     '</div>';
   }
 
