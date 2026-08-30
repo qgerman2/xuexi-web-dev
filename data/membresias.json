@@ -1,10 +1,10 @@
 {
   "montoGeneral": 2000,
   "textoMontoGeneral": "$2.000 CLP (General / RM)",
-  "linkMercadoPagoGeneral": "https://mpago.la/1FJxacC",
+  "linkMercadoPagoGeneral": "https://mpago.la/1oBY69U",
   "instrucciones": "Selecciona la cuota correspondiente a tu ubicación para abrir la pasarela segura de Mercado Pago / Getnet.",
   "_instrucciones": "Pega en linkMercadoPagoGeneral y linkMercadoPagoRegion los enlaces que genera Mercado Pago al crear el cobro. Mientras estén vacíos, el portal muestra los montos pero no ofrece un botón de pago que no funcionaría.",
-  "linkMercadoPagoRegion": "https://mpago.la/1BubZMe",
+  "linkMercadoPagoRegion": "https://mpago.la/11Y1NfM",
   "diaCobro": 5,
   "metodosAceptados": "Redcompra (Débito), Crédito, Mercado Pago, CuentaRUT",
   "textoMontoRegion": "$1.000 CLP (Regiones)",
