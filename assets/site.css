@@ -1095,3 +1095,10 @@ footer{border-top:1px solid var(--line);padding:clamp(34px,5vw,58px) 0 40px}
 .coord-check input{width:auto;margin:0}
 #coord-cuotas-lista{width:100%;min-height:100px;resize:vertical;margin-bottom:8px;
   font-family:var(--mono);font-size:.8rem;line-height:1.6}
+
+/* Aviso de pago del miembro: constancia visible mientras la coordinación lo
+   confirma contra la cartola. No es un estado "al día", y no debe parecerlo. */
+.pay-declarado{color:var(--gold);font-weight:600;margin-top:10px}
+.coord-declarado{font-family:var(--sans);font-size:.72rem;color:var(--gold);letter-spacing:.02em}
+.coord-btn-mini.coord-confirmar{border-color:var(--gold);background:rgba(212,175,97,.16);color:var(--gold)}
+.coord-btn-mini.coord-confirmar:hover{background:rgba(212,175,97,.28)}

@@ -343,7 +343,8 @@
     var lote = db.batch();
     var sello = firebase.firestore.FieldValue.serverTimestamp();
     alDia.forEach(function(m){
-      lote.update(db.collection('miembros').doc(m.uid), {estadoPago:'al_dia', ultimoCambioPago:sello});
+      lote.update(db.collection('miembros').doc(m.uid), {estadoPago:'al_dia', ultimoCambioPago:sello,
+        pagoDeclarado: firebase.firestore.FieldValue.delete()});
     });
     if (marcarPend) pendientes.forEach(function(m){
       lote.update(db.collection('miembros').doc(m.uid), {estadoPago:'pendiente', ultimoCambioPago:sello});
@@ -374,14 +375,23 @@
         var d = doc.data();
         filas.push({ uid: doc.id, nombre: d.nombre || '', email: d.email || '',
                      comision: d.comision || '', rol: d.rol || 'miembro',
-                     pago: d.estadoPago || 'pendiente' });
+                     pago: d.estadoPago || 'pendiente',
+                     declarado: d.pagoDeclarado || null });
       });
-      filas.sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
+      // Quienes avisaron que pagaron van primero: son los que esperan respuesta.
+      filas.sort(function(a,b){
+        var da = a.declarado && a.pago !== 'al_dia' ? 0 : 1;
+        var dbb = b.declarado && b.pago !== 'al_dia' ? 0 : 1;
+        if (da !== dbb) return da - dbb;
+        return a.nombre.localeCompare(b.nombre);
+      });
       miembrosCache = filas;
       var res = document.getElementById('coord-miembros-resumen');
       if (res){
         var n = filas.filter(function(f){ return f.pago === 'al_dia'; }).length;
-        res.textContent = filas.length + ' con cuenta · ' + n + ' al día · ' + (filas.length - n) + ' pendientes';
+        var av = filas.filter(function(f){ return f.declarado && f.pago !== 'al_dia'; }).length;
+        res.textContent = filas.length + ' con cuenta · ' + n + ' al día · ' + (filas.length - n) + ' pendientes' +
+          (av ? ' · ' + av + ' esperando confirmación' : '');
       }
       caja.innerHTML = '<table class="coord-tabla"><thead><tr>' +
         '<th>Nombre</th><th>Comisión</th><th>Rol</th><th>Cuota</th><th></th></tr></thead><tbody>' +
@@ -390,20 +400,27 @@
           return '<tr><td>' + esc(f.nombre) + '<br><span class="coord-sub">' + esc(f.email) + '</span></td>' +
             '<td>' + esc(f.comision || '—') + '</td>' +
             '<td>' + esc(f.rol) + '</td>' +
-            '<td>' + (alDia ? 'Al día' : 'Pendiente') + '</td>' +
-            '<td><button class="coord-btn-mini" data-pago="' + esc(f.uid) + '" data-estado="' +
-              (alDia ? 'pendiente' : 'al_dia') + '">' +
-              (alDia ? 'Marcar pendiente' : 'Marcar al día') + '</button></td></tr>';
+            '<td>' + (alDia ? 'Al día' : 'Pendiente') +
+              (f.declarado && !alDia
+                ? '<br><span class="coord-declarado">Avisó que pagó el ' + esc(f.declarado.fecha) + '</span>'
+                : '') + '</td>' +
+            '<td><button class="coord-btn-mini' + (f.declarado && !alDia ? ' coord-confirmar' : '') +
+              '" data-pago="' + esc(f.uid) + '" data-estado="' + (alDia ? 'pendiente' : 'al_dia') + '">' +
+              (alDia ? 'Marcar pendiente' : (f.declarado ? 'Confirmar pago' : 'Marcar al día')) +
+              '</button></td></tr>';
         }).join('') + '</tbody></table>';
 
       [].forEach.call(caja.querySelectorAll('[data-pago]'), function(b){
         b.addEventListener('click', function(){
           var uid = b.getAttribute('data-pago');
           var estado = b.getAttribute('data-estado');
-          db.collection('miembros').doc(uid).update({
+          var cambio = {
             estadoPago: estado,
             ultimoCambioPago: firebase.firestore.FieldValue.serverTimestamp()
-          }).then(listarMiembros)
+          };
+          // Confirmado el pago, el aviso ya cumplió su función.
+          if (estado === 'al_dia') cambio.pagoDeclarado = firebase.firestore.FieldValue.delete();
+          db.collection('miembros').doc(uid).update(cambio).then(listarMiembros)
             .catch(function(e){ alert('No se pudo actualizar: ' + e.message); });
         });
       });

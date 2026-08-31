@@ -59,6 +59,7 @@
             comision: perfil.comision || '',
             rol: perfil.rol || 'miembro',
             estadoPago: perfil.estadoPago || 'pendiente',
+            pagoDeclarado: perfil.pagoDeclarado || null,
             ultimoPago: perfil.ultimoPago || null
           });
         })
@@ -157,6 +158,23 @@
         return lista;
       })
       .catch(function(){ return []; });
+  }
+
+  // Avisar que se pagó la cuota. NO cambia el estado: solo deja constancia para
+  // que la coordinación lo confirme contra la cartola. Las reglas de Firestore
+  // impiden que alguien se marque al día a sí mismo, y así debe seguir siendo.
+  function declararPago(){
+    if (!listo && !iniciar()) return noDisponible();
+    var u = auth.currentUser;
+    if (!u) return Promise.reject(new Error('Necesitas iniciar sesión.'));
+    var hoy = new Date();
+    return db.collection('miembros').doc(u.uid).update({
+      pagoDeclarado: {
+        fecha: hoy.toISOString().slice(0, 10),
+        mes: hoy.getMonth() + 1,
+        anio: hoy.getFullYear()
+      }
+    });
   }
 
   function obtenerConfigMembresia(){
@@ -307,6 +325,7 @@
     registrar: registrar,
     obtenerCalendarioInterno: obtenerCalendarioInterno,
     obtenerConfigMembresia: obtenerConfigMembresia,
+    declararPago: declararPago,
     subirFotoEvento: subirFotoEvento,
     obtenerFotosEvento: obtenerFotosEvento,
     eliminarFotoEvento: eliminarFotoEvento,
