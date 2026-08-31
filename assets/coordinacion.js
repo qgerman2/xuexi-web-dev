@@ -291,6 +291,79 @@
 
   // ─────────────────────────── Miembros ───────────────────────────
 
+  // Guardamos el último listado leído para poder exportarlo y para marcar
+  // cuotas en lote sin volver a consultar.
+  var miembrosCache = [];
+
+  function exportarMiembros(){
+    if (!miembrosCache.length){ alert('Todavía no se ha cargado el listado.'); return; }
+    var tsv = 'Nombre\tCorreo\tComision\tRol\tCuota\n' + miembrosCache.map(function(m){
+      return [m.nombre, m.email, m.comision, m.rol,
+              m.pago === 'al_dia' ? 'Al día' : 'Pendiente'].join('\t');
+    }).join('\n');
+    var av = document.getElementById('coord-miembros-aviso');
+    navigator.clipboard.writeText(tsv).then(function(){
+      av.textContent = ' ✓ Copiado: ' + miembrosCache.length + ' miembros. Pégalo en una planilla.';
+    }).catch(function(){
+      av.textContent = ' No se pudo copiar. Selecciona la tabla a mano.';
+    });
+  }
+
+  // Marcar cuotas en lote. Pensado para el cierre de mes: se pega la lista de
+  // quienes pagaron y el resto queda pendiente, en vez de ir uno por uno.
+  function marcarCuotasEnLote(){
+    var caja = document.getElementById('coord-cuotas-resultado');
+    var texto = document.getElementById('coord-cuotas-lista').value;
+
+    // De cada línea tomamos lo que parezca un correo.
+    var correos = [];
+    texto.split(/[\n,;\t ]+/).forEach(function(p){
+      p = p.trim().toLowerCase();
+      if (p.indexOf('@') !== -1) correos.push(p);
+    });
+    if (!correos.length){
+      caja.innerHTML = '<p class="coord-aviso coord-error">No encontré ningún correo en lo que pegaste.</p>';
+      return;
+    }
+
+    var alDia = [], pendientes = [], noEncontrados = correos.slice();
+    miembrosCache.forEach(function(m){
+      var e = (m.email || '').toLowerCase();
+      var i = noEncontrados.indexOf(e);
+      if (i !== -1){ noEncontrados.splice(i, 1); alDia.push(m); }
+      else pendientes.push(m);
+    });
+
+    var marcarPend = document.getElementById('coord-cuotas-resto').checked;
+    var resumen = 'Se marcarán ' + alDia.length + ' como AL DÍA' +
+      (marcarPend ? ' y ' + pendientes.length + ' como PENDIENTE' : '') + '. ¿Continuar?';
+    if (!confirm(resumen)) return;
+
+    caja.innerHTML = 'Actualizando…';
+    var lote = db.batch();
+    var sello = firebase.firestore.FieldValue.serverTimestamp();
+    alDia.forEach(function(m){
+      lote.update(db.collection('miembros').doc(m.uid), {estadoPago:'al_dia', ultimoCambioPago:sello});
+    });
+    if (marcarPend) pendientes.forEach(function(m){
+      lote.update(db.collection('miembros').doc(m.uid), {estadoPago:'pendiente', ultimoCambioPago:sello});
+    });
+
+    lote.commit().then(function(){
+      caja.innerHTML = '<p class="coord-ok">Listo: ' + alDia.length + ' al día' +
+        (marcarPend ? ', ' + pendientes.length + ' pendientes' : '') + '.</p>' +
+        (noEncontrados.length
+          ? '<p class="coord-aviso">Estos correos no corresponden a ninguna cuenta creada, así que ' +
+            'no se pudo marcarlos (probablemente aún no se registran): <br><span class="coord-sub">' +
+            esc(noEncontrados.join(', ')) + '</span></p>'
+          : '');
+      document.getElementById('coord-cuotas-lista').value = '';
+      listarMiembros();
+    }).catch(function(e){
+      caja.innerHTML = '<p class="coord-aviso coord-error">No se pudo actualizar: ' + esc(e.message) + '</p>';
+    });
+  }
+
   function listarMiembros(){
     var caja = document.getElementById('coord-miembros-lista');
     aviso(caja, 'Cargando…');
@@ -304,6 +377,12 @@
                      pago: d.estadoPago || 'pendiente' });
       });
       filas.sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
+      miembrosCache = filas;
+      var res = document.getElementById('coord-miembros-resumen');
+      if (res){
+        var n = filas.filter(function(f){ return f.pago === 'al_dia'; }).length;
+        res.textContent = filas.length + ' con cuenta · ' + n + ' al día · ' + (filas.length - n) + ' pendientes';
+      }
       caja.innerHTML = '<table class="coord-tabla"><thead><tr>' +
         '<th>Nombre</th><th>Comisión</th><th>Rol</th><th>Cuota</th><th></th></tr></thead><tbody>' +
         filas.map(function(f){
@@ -393,7 +472,26 @@
 
         '<div class="coord-bloque">' +
         '<h3>Miembros</h3>' +
-        '<p class="coord-desc">El estado de la cuota lo marca la coordinación: nadie puede marcarse solo.</p>' +
+        '<p class="coord-desc">El estado de la cuota lo marca la coordinación: nadie puede marcarse solo. ' +
+          '<span id="coord-miembros-resumen" class="coord-sub"></span></p>' +
+
+        '<div class="coord-fila">' +
+          '<button class="coord-btn-mini" id="coord-exportar">Copiar listado para planilla</button>' +
+          '<span class="coord-sub" id="coord-miembros-aviso"></span>' +
+        '</div>' +
+
+        '<div class="coord-import">' +
+          '<h4 class="coord-sub-h">Marcar cuotas del mes</h4>' +
+          '<p class="coord-desc">Pega los correos de quienes pagaron. Sirve una lista, una columna ' +
+            'copiada de la planilla o texto separado por comas.</p>' +
+          '<textarea id="coord-cuotas-lista" rows="5" ' +
+            'placeholder="adi@uc.cl&#10;clgarrido1@uc.cl&#10;durzs@uc.cl"></textarea>' +
+          '<label class="coord-check"><input type="checkbox" id="coord-cuotas-resto" checked> ' +
+            'Marcar como pendiente a quienes no estén en la lista</label>' +
+          '<button class="btn btn-sello" id="coord-marcar-cuotas">Aplicar</button>' +
+          '<div id="coord-cuotas-resultado"></div>' +
+        '</div>' +
+
         '<div id="coord-miembros-lista"></div>' +
       '</div>' +
 
@@ -411,6 +509,8 @@
 
     document.getElementById('coord-crear-codigo').addEventListener('click', crearCodigo);
     document.getElementById('coord-crear-lote').addEventListener('click', crearLote);
+    document.getElementById('coord-exportar').addEventListener('click', exportarMiembros);
+    document.getElementById('coord-marcar-cuotas').addEventListener('click', marcarCuotasEnLote);
     document.getElementById('coord-agregar-evento').addEventListener('click', agregarEvento);
     document.getElementById('coord-importar').addEventListener('click', importarPlan);
 
