@@ -823,16 +823,37 @@ footer{border-top:1px solid var(--line);padding:clamp(34px,5vw,58px) 0 40px}
 .month-days-header{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;
   font-size:.72rem;letter-spacing:.1em;color:var(--cream-faint);text-transform:uppercase;margin-bottom:8px}
 .month-grid-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.day-cell{aspect-ratio:1;border-radius:6px;border:1px solid rgba(255,255,255,.04);
-  background:rgba(20,14,14,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;
-  position:relative;font-size:.84rem;color:var(--cream-dim);cursor:pointer;transition:all .2s ease}
-.day-cell.other-month{opacity:.25;pointer-events:none}
-.day-cell.today{border-color:var(--gold);color:var(--gold);font-weight:bold;background:rgba(212,175,97,.08)}
-.day-cell.has-event{background:linear-gradient(135deg,rgba(192,57,43,.25),rgba(30,22,20,.6));
-  border-color:rgba(192,57,43,.5);color:var(--cream);font-weight:600;box-shadow:0 4px 10px -4px rgba(192,57,43,.4)}
-.day-cell.has-event::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--gold);
-  position:absolute;bottom:4px;box-shadow:0 0 6px var(--gold)}
-.day-cell.has-event:hover{transform:scale(1.08);border-color:var(--gold)}
+/* Las casillas crecen con su contenido: un día puede tener más de una
+   actividad, y el título tiene que leerse sin pasar el mouse por encima. */
+.day-cell{min-height:96px;border-radius:6px;border:1px solid rgba(255,255,255,.04);
+  background:rgba(255,255,255,.02);padding:6px 5px;display:flex;flex-direction:column;gap:3px;
+  font-family:var(--sans);font-size:.78rem;color:var(--cream-dim);transition:border-color .2s}
+.day-cell.other-month{background:transparent;border-color:transparent;min-height:0}
+.day-num{font-size:.72rem;font-weight:700;letter-spacing:.04em;align-self:flex-end;opacity:.65}
+.day-cell.today{border-color:var(--gold);background:rgba(212,175,97,.08)}
+.day-cell.today .day-num{color:var(--gold);opacity:1}
+.day-cell.has-event{background:rgba(255,255,255,.045)}
+.day-cell.has-event:hover{border-color:var(--gold)}
+.day-ev{display:block;font-size:.68rem;line-height:1.25;padding:3px 5px;border-radius:4px;
+  border-left:3px solid var(--gold);background:rgba(212,175,97,.12);color:var(--cream);
+  overflow:hidden;text-overflow:ellipsis}
+.day-ev i{opacity:.7;font-style:normal}
+.day-ev.tipo-interna{border-left-color:var(--vermilion);background:rgba(192,57,43,.16)}
+.day-ev.tipo-capacitacion{border-left-color:var(--jade);background:rgba(46,125,107,.16)}
+.day-ev.tipo-social{border-left-color:var(--gold);background:rgba(212,175,97,.12)}
+.day-ev.tipo-gestion{border-left-color:var(--cream-dim);background:rgba(255,255,255,.06);opacity:.85}
+/* Punteado = todavía no confirmada. Es casi todo el organizador, y conviene
+   que se note a simple vista cuál es una promesa y cuál una fecha cerrada. */
+.day-ev-tentativo{border-left-style:dashed}
+.month-pendientes{margin-top:18px;padding-top:14px;border-top:1px dashed var(--line)}
+.month-pendientes h4{font-family:var(--serif);font-size:.9rem;color:var(--cream);margin:0 0 8px}
+.month-pendientes h4 span{font-family:var(--sans);font-size:.72rem;color:var(--cream-dim);font-weight:400}
+.month-pendientes-lista{display:flex;flex-wrap:wrap;gap:6px}
+.month-pendientes-lista .day-ev{flex:0 1 auto;max-width:100%}
+@media (max-width:720px){
+  .day-cell{min-height:64px;padding:4px 3px}
+  .day-ev{font-size:.6rem;padding:2px 3px}
+}
 
 /* VISTA TIMELINE CRONOLÓGICO */
 .timeline-container{position:relative;padding-left:28px;margin-top:10px}

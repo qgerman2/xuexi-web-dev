@@ -226,62 +226,103 @@
     });
   }
 
-  // Plan de la Comisión Wailian 2026, tal como está en la planilla del club.
+  // Plan de la Comisión Wailian 2026, tomado del "Organizador de Contenido
+  // Mensual" (agosto a diciembre de 2026).
   //
-  // Ninguna actividad tiene fecha confirmada. Por eso 'fecha' queda VACÍA
-  // cuando la planilla no da un día concreto: inventar una para poder ordenar
-  // haría que se mostrara como si fuera real. El texto original va en
-  // 'fechaTexto' y se muestra tal cual ("Octubre", "Sin fecha definida").
-  //   [ título, fecha ISO o '', texto de la fecha, tipo, detalle, a cargo, con ]
-  var PLAN_WAILIAN = [
-    ['Charla: ¿Cómo hacer negocios con China?','','Octubre','interna','Charla con un experto en negocios con China.','Catalina Leiva','Instituto Confucio UC'],
-    ['Ciclo de Cine Chino · Sesión 1','','Sin fecha definida','social','Ciclo interuniversitario, con el Club de Cine de la U. de Concepción.','Nadja Albarrán','Club de Cine UdeC'],
-    ['Charla: ¿Cómo es estudiar en China?','','Octubre','interna','Experiencias de estudio en China (pregrado, magíster, doctorado), con y sin beca.','Catalina Leiva','Instituto Confucio UC'],
-    ['Ceremonia del té','','Por consultar al templo','social','Visita al templo budista Fo Guang Shan para aprender las etapas de la ceremonia.','Caro Marín','Templo Fo Guang Shan'],
-    ['Taller de Douyin Makeup','','Sin fecha definida','social','Técnicas de maquillaje popularizadas en Douyin.','Martina Soto','Interno'],
-    ['Taller Introducción al idioma chino I','','Última semana de agosto, cualquier día salvo miércoles','capacitacion','Clase básica de saludos y palabras simples. Difusión vía Consejerías Académicas.','Martina Soto','Interno'],
-    ['Taller Introducción al idioma chino II','2026-08-21','21 al 23 de agosto','capacitacion','Clase básica de saludos y palabras simples. Difusión vía Consejerías Académicas.','Karen Quijada','Interno'],
-    ['Ciclo de Cine Chino · Sesión 2','','Sin fecha definida','social','Segunda sesión, con una agrupación de la Universidad de Chile.','Sofía Lizama','U. de Chile'],
-    ['Taller de Wantanes fritos','','Cuarta semana de agosto, sujeto a disponibilidad del laboratorio','social','Taller para aprender a preparar wantanes fritos.','Benjamín Varas','Interno'],
-    ['Taller de Taichi','','Por coordinar','social','Taichi y meditación como herramienta de concentración y bienestar.','Nathaly Jeria','Academia Longhun Wudao'],
-    ['Ciclo de Cine Chino · Sesión 3','','Por consultar','social','Tercera sesión; se propone colaboración con el Centro UC de Estudios Asiáticos.','Catalina Leiva','Centro UC de Estudios Asiáticos (a confirmar)'],
-    ['Degustación de Pasteles de Luna','','Agosto','social','Dulce tradicional del Festival de Medio Otoño.','Sofía Lizama','Interno'],
-    ['Ciclo de Cine Chino · Sesión 4','','Sin fecha definida','social','Cuarta sesión, en colaboración con equipo de la U. de Chile.','Martina Soto','U. de Chile (a confirmar)'],
-    ['Demostración Danza del León','','Ojalá octubre','social','Muestra de danza del león al aire libre en un campus.','Javier Zúñiga','Grupo de danza (a confirmar)'],
-    ['Charla de taoísmo','','Octubre','interna','Acercamiento al taoísmo como tradición filosófica y espiritual china.','Benjamín Varas','Interno'],
-    ['Taller de caligrafía','2026-09-07','Lunes 7 de septiembre','capacitacion','Arte de la escritura china con pincel y tinta.','Sofía (Xinxi)','Instituto Confucio UC (a confirmar)'],
-    ['Taller de cocina de Jiaozi','','Agosto','social','Taller para aprender a cocinar jiaozi.','Sofía Lizama','Interno'],
-    ['Taller de arte chino','2026-09-12','Sábado 12 de septiembre','capacitacion','Pintura china, reutilizando materiales del taller de caligrafía.','Sofía (Xinxi)','Interno'],
-    ['Actividad infantil con Biblioteca Escolar Futuro','2026-09-25','25 de septiembre','social','Colaboración con Biblioteca Escolar Futuro.','Sofía (Xinxi)','Biblioteca Escolar Futuro']
+  // El PDF traía además dos hojas de agosto y septiembre del AÑO PASADO: sus
+  // rejillas cuadran con 2025, no con 2026. Están descartadas a propósito.
+  //
+  // Ninguna actividad se importa como confirmada: el organizador es una
+  // planificación interna, no una agenda cerrada. La coordinación confirma
+  // cada una cuando corresponda.
+  //
+  // AVISO SOBRE NOVIEMBRE: en el PDF la rejilla de noviembre está corrida un
+  // día (dibuja el 1 en sábado, que es 2025; en 2026 cae domingo). Mandan los
+  // números escritos en cada casilla, que son los que se usan aquí.
+  //
+  //   [ título, fecha ISO o '', fecha de término o '', texto de la fecha,
+  //     tipo, detalle, a cargo, con ]
+  var PLAN_ORGANIZADOR = [
+    // ───────────────────────────── Agosto ─────────────────────────────
+    ['Taller Introducción al idioma chino I','2026-08-25','','25 de agosto','capacitacion','Clase básica de saludos y palabras simples.','Karen y Carolina',''],
+    ['Compra: potes, pliegos kraft y papel de caligrafía','2026-08-29','','29 de agosto','gestion','Materiales para el taller de caligrafía.','',''],
+
+    // ─────────────────────────── Septiembre ───────────────────────────
+    ['Contacto con el Instituto Confucio: charla "cómo hacer negocios en China"','2026-09-01','2026-09-03','1 al 3 de septiembre','gestion','Gestionar la charla con el Instituto Confucio.','Catalina','Instituto Confucio UC'],
+    ['Entrega de galletas, jugos y servilletas para la charla de Douyin','2026-09-01','2026-09-05','Primera semana de septiembre','gestion','Incluye conseguir un voluntario con computador.','',''],
+    ['Taller de caligrafía','2026-09-04','','4 de septiembre','capacitacion','Arte de la escritura china con pincel y tinta.','Sofía','Comisión Xinxi'],
+    ['Reunión Wailian','2026-09-05','','5 de septiembre','interna','','',''],
+    ['Charla de Douyin Make up','2026-09-07','','7 de septiembre','social','Técnicas de maquillaje popularizadas en Douyin.','Martina',''],
+    ['Compra: kraft, tinta roja, potes, pinceles, toallitas húmedas y galletas','2026-09-14','2026-09-18','Semana del 14 al 18 de septiembre','gestion','Materiales para el taller de arte chino.','',''],
+    ['Taller Introducción al idioma chino II','2026-09-18','','18 de septiembre','capacitacion','','',''],
+    ['Pedir sala para el Taller de Arte Chino','2026-09-21','','21 de septiembre','gestion','','Sofía','Comisión Xinxi'],
+    ['Ciclo de Cine Chino · U. de Concepción','2026-09-21','2026-09-25','Semana del 21 al 25 de septiembre','social','','Nadja','Club de Cine UdeC'],
+    ['Ciclo de Cine Chino · U. de Chile','2026-09-28','2026-09-30','28 al 30 de septiembre','social','','','U. de Chile'],
+
+    // ───────────────────────────── Octubre ────────────────────────────
+    ['Teatro de sombras','2026-10-02','','2 de octubre','social','','Sofía',''],
+    ['Charla: ¿Cómo es estudiar en China?','2026-10-05','2026-10-09','Semana del 5 al 9 de octubre','interna','En el organizador aparece marcada como CONFIRMAR.','Catalina','Instituto Confucio UC'],
+    ['Demostración Danza del León','2026-10-13','2026-10-15','13 al 15 de octubre','social','','Javier',''],
+    ['Ciclo de Cine Chino · CEAE','2026-10-21','','21 de octubre','social','','Cata','Centro UC de Estudios Asiáticos'],
+
+    // ──────────────────────────── Noviembre ───────────────────────────
+    ['Charla con la empresa Fiberhome','2026-11-05','','5 de noviembre','interna','','','Fiberhome'],
+    ['Taller de cocina','2026-11-07','','7 de noviembre','social','','',''],
+    ['Actividad con las maestras del templo','2026-11-13','','13 de noviembre','social','','','Templo Fo Guang Shan'],
+    ['Medicina china con Junzi','2026-11-19','','19 de noviembre','interna','','','Junzi'],
+    ['Taller de Taichi','2026-11-20','','20 de noviembre','social','','',''],
+    ['Sesión de Cineclub (Shanghái)','2026-11-20','','20 de noviembre','social','','',''],
+    ['Taller de acupuntura','2026-11-25','','25 de noviembre','social','En el organizador la etiqueta queda entre el 25 y el 26: hay que fijar el día.','',''],
+    ['Sesión de Cineclub (Wuxi)','','','Noviembre · sin día definido','social','Aparece en el listado de actividades del mes, fuera de la rejilla.','',''],
+    ['Charla de Shaanxi, Xi\'an o Zhejiang','','','Noviembre · sin día definido','interna','Aparece en el listado de actividades del mes, fuera de la rejilla. Falta elegir la provincia.','',''],
+
+    // ──────────────────────────── Diciembre ───────────────────────────
+    ['Visita Xuexi al templo','','','Diciembre · sin día definido','social','','','Templo Fo Guang Shan']
   ];
+
+  // Cuántos documentos pudo dejar una importación anterior. Se borran los que
+  // sobran para que un plan más corto no deje actividades fantasma detrás.
+  var IMPORT_MAX = 40;
+
+  function idImportado(i){
+    return 'wailian-2026-' + String(i).padStart(2, '0');
+  }
 
   function importarPlan(){
     var caja = document.getElementById('coord-import-resultado');
-    if (!confirm('Se agregarán ' + PLAN_WAILIAN.length + ' actividades al calendario interno. ¿Continuar?')) return;
+    if (!confirm('Se reemplazará el plan importado por las ' + PLAN_ORGANIZADOR.length +
+        ' actividades del Organizador Mensual (agosto a diciembre de 2026).\n\n' +
+        'Las actividades que la coordinación agregó a mano NO se tocan, pero sí se ' +
+        'pierden los cambios hechos sobre las actividades importadas antes. ¿Continuar?')) return;
     caja.innerHTML = 'Importando…';
 
     var lote = db.batch();
-    PLAN_WAILIAN.forEach(function(a, i){
-      var ref = db.collection('calendario_interno').doc('wailian-2026-' + String(i+1).padStart(2,'0'));
-      lote.set(ref, {
+    PLAN_ORGANIZADOR.forEach(function(a, i){
+      lote.set(db.collection('calendario_interno').doc(idImportado(i + 1)), {
         titulo: a[0],
-        fecha: a[1],          // vacía si la planilla no da un día concreto
-        fechaTexto: a[2],     // lo que dice la planilla, tal cual
-        confirmada: false,    // ninguna está confirmada todavía
+        fecha: a[1],          // vacía si el organizador no da un día concreto
+        fechaFin: a[2],       // solo en las actividades que ocupan varios días
+        fechaTexto: a[3],     // lo que dice el organizador, tal cual
+        confirmada: false,    // es una planificación, no una agenda cerrada
         hora: '',
         lugar: '',
-        tipo: a[3],
-        detalle: a[4],
-        responsable: a[5],
-        colaborador: a[6],
+        tipo: a[4],
+        detalle: a[5],
+        responsable: a[6],
+        colaborador: a[7],
         comision: 'wailian',
+        origen: 'organizador-mensual-2026',
         creadoPor: usuario.uid
       });
     });
+    // Sobrantes de la importación anterior, que era más larga o más corta.
+    for (var j = PLAN_ORGANIZADOR.length + 1; j <= IMPORT_MAX; j++){
+      lote.delete(db.collection('calendario_interno').doc(idImportado(j)));
+    }
 
     lote.commit().then(function(){
-      caja.innerHTML = '<p class="coord-ok">Se importaron ' + PLAN_WAILIAN.length +
-        ' actividades. Puedes volver a pulsar el botón si actualizas la planilla: ' +
+      caja.innerHTML = '<p class="coord-ok">Se sincronizaron ' + PLAN_ORGANIZADOR.length +
+        ' actividades. Puedes volver a pulsar el botón cuando cambie el organizador: ' +
         'se sobrescriben, no se duplican.</p>';
       if (window.recargarCalendarioInterno) window.recargarCalendarioInterno();
     }).catch(function(e){
@@ -474,15 +515,18 @@
             '<option value="interna">Reunión de coordinación</option>' +
             '<option value="capacitacion">Capacitación interna</option>' +
             '<option value="social">Actividad social / tándem</option>' +
+            '<option value="gestion">Gestión o compra</option>' +
           '</select>' +
           '<textarea id="coord-cal-detalle" placeholder="Detalle (opcional)"></textarea>' +
         '</div>' +
         '<button class="btn btn-sello" id="coord-agregar-evento">Agregar actividad</button>' +
         '<div id="coord-cal-resultado"></div>' +
         '<div class="coord-import">' +
-          '<button class="coord-btn-mini" id="coord-importar">Importar plan Wailian 2026 (19 actividades)</button>' +
-          '<p class="coord-sub">Las carga con su fecha tentativa. Ninguna está confirmada, ' +
-            'así que se guardan solo aquí y no en la agenda pública.</p>' +
+          '<button class="coord-btn-mini" id="coord-importar">Sincronizar Organizador Mensual (' +
+            PLAN_ORGANIZADOR.length + ' actividades)</button>' +
+          '<p class="coord-sub">Agosto a diciembre de 2026, tal como están en el organizador. ' +
+            'Ninguna queda confirmada, así que se guardan solo aquí y no en la agenda pública. ' +
+            'Volver a pulsarlo sobrescribe: no duplica.</p>' +
           '<div id="coord-import-resultado"></div>' +
         '</div>' +
       '</div>' +

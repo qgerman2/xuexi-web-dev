@@ -6,7 +6,7 @@
 <title>Portal de Miembros · Xuexi Club UC</title>
 <meta name="description" content="Calendario interno de actividades y recursos para integrantes del Xuexi Club UC.">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/site.css?v=18">
+<link rel="stylesheet" href="assets/site.css?v=19">
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -93,6 +93,7 @@
         <button class="chip" data-tipo="interna" aria-pressed="false">Reuniones</button>
         <button class="chip" data-tipo="capacitacion" aria-pressed="false">Capacitaciones</button>
         <button class="chip" data-tipo="social" aria-pressed="false">Social / Tándem</button>
+        <button class="chip" data-tipo="gestion" aria-pressed="false">Gestión</button>
       </div>
 
       <div class="view-switch">
@@ -112,6 +113,7 @@
         <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
       </div>
       <div class="month-grid-days" id="month-days-grid"></div>
+      <div id="month-sin-fecha"></div>
     </div>
 
     <!-- VISTA TIMELINE CRONOLÓGICO -->
@@ -162,9 +164,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 <script src="assets/firebase-config.js"></script>
-<script src="assets/nav.js?v=18"></script>
-<script src="assets/auth.js?v=18"></script>
-<script src="assets/coordinacion.js?v=18"></script>
+<script src="assets/nav.js?v=19"></script>
+<script src="assets/auth.js?v=19"></script>
+<script src="assets/coordinacion.js?v=19"></script>
 <script>
 (function(){
   document.getElementById('anio').textContent = new Date().getFullYear();
@@ -215,12 +217,14 @@
   function getHanzi(tipo){
     if (tipo === 'interna') return '会';
     if (tipo === 'capacitacion') return '学';
+    if (tipo === 'gestion') return '办';
     return '聚';
   }
 
   function getTipoLabel(tipo){
     if (tipo === 'interna') return 'Reunión Coordinación';
     if (tipo === 'capacitacion') return 'Capacitación Interna';
+    if (tipo === 'gestion') return 'Gestión o compra';
     return 'Actividad Social / Tándem';
   }
 
@@ -335,51 +339,83 @@
   }
 
   // Render Matriz Mensual
+  // Devuelve los días del mes que ocupa una actividad. Las que duran varios
+  // días (las barras del organizador) aparecen en cada casilla del tramo.
+  function diasQueOcupa(ev, anio, mes){
+    if (!ev.fecha) return [];
+    var ini = new Date(ev.fecha + 'T12:00:00');
+    var fin = ev.fechaFin ? new Date(ev.fechaFin + 'T12:00:00') : ini;
+    if (isNaN(ini) || isNaN(fin) || fin < ini) fin = ini;
+    var dias = [];
+    for (var d = new Date(ini); d <= fin; d.setDate(d.getDate() + 1)){
+      if (d.getFullYear() === anio && d.getMonth() === mes) dias.push(d.getDate());
+    }
+    return dias;
+  }
+
   function renderMonthGrid(){
     monthTitle.textContent = MESES[currMonth] + ' ' + currYear;
-    
+
     var firstDay = new Date(currYear, currMonth, 1);
-    var lastDay = new Date(currYear, currMonth + 1, 0);
-
-    // Ajustar primer día de semana (0 es Domingo -> convertir a 6; Lunes es 0)
+    var monthLength = new Date(currYear, currMonth + 1, 0).getDate();
+    // getDay() cuenta el domingo como 0; aquí la semana parte en lunes.
     var startingDay = (firstDay.getDay() + 6) % 7;
-    var monthLength = lastDay.getDate();
 
-    // Mapear eventos del mes actual
-    var eventosDelMes = {};
-    todosLosEventos.forEach(function(ev){
-      // Sin fecha no hay casilla donde ponerla; aparecen en el cronograma.
-      if (!ev.fecha) return;
-      var p = ev.fecha.split('-');
-      if (+p[0] === currYear && (+p[1]-1) === currMonth) {
-        var d = parseInt(p[2], 10);
-        eventosDelMes[d] = ev;
+    var visibles = filtroActivo === 'todo'
+      ? todosLosEventos
+      : todosLosEventos.filter(function(e){ return e.tipo === filtroActivo; });
+
+    // Un día puede tener varias actividades: guardamos una lista, no una sola.
+    var porDia = {};
+    var sinFecha = [];
+    visibles.forEach(function(ev){
+      var dias = diasQueOcupa(ev, currYear, currMonth);
+      if (!dias.length){
+        if (!ev.fecha) sinFecha.push(ev);
+        return;
       }
+      dias.forEach(function(d){ (porDia[d] = porDia[d] || []).push(ev); });
     });
 
-    var today = new Date();
-    var isCurrentMonthYear = today.getFullYear() === currYear && today.getMonth() === currMonth;
+    var hoy = new Date();
+    var mesEnCurso = hoy.getFullYear() === currYear && hoy.getMonth() === currMonth;
 
     var html = '';
-    // Días del mes anterior (relleno)
-    for (var i = 0; i < startingDay; i++) {
-      html += '<div class="day-cell other-month"></div>';
-    }
+    for (var i = 0; i < startingDay; i++) html += '<div class="day-cell other-month"></div>';
 
-    // Días del mes
-    for (var day = 1; day <= monthLength; day++) {
-      var isToday = isCurrentMonthYear && today.getDate() === day;
-      var hasEv = !!eventosDelMes[day];
+    for (var day = 1; day <= monthLength; day++){
+      var delDia = porDia[day] || [];
+      var cls = 'day-cell' +
+        (mesEnCurso && hoy.getDate() === day ? ' today' : '') +
+        (delDia.length ? ' has-event' : '');
 
-      var cls = 'day-cell' + (isToday ? ' today' : '') + (hasEv ? ' has-event' : '');
-      var evData = hasEv ? eventosDelMes[day] : null;
-
-      html += '<div class="' + cls + '" ' + (hasEv ? 'title="' + esc(evData.titulo) + '"' : '') + '>' +
-        '<span>' + day + '</span>' +
-      '</div>';
+      html += '<div class="' + cls + '"><span class="day-num">' + day + '</span>';
+      delDia.forEach(function(ev){
+        html += '<span class="day-ev tipo-' + esc(ev.tipo || 'social') +
+          (ev.confirmada === false ? ' day-ev-tentativo' : '') +
+          '" title="' + esc(ev.titulo) + (ev.fechaTexto ? ' · ' + esc(ev.fechaTexto) : '') + '">' +
+          esc(ev.titulo) + '</span>';
+      });
+      html += '</div>';
     }
 
     monthGrid.innerHTML = html;
+
+    // Igual que el organizador en papel: las que no tienen día van en una
+    // lista aparte, no repartidas en casillas inventadas.
+    var caja = document.getElementById('month-sin-fecha');
+    if (!caja) return;
+    if (!sinFecha.length){ caja.innerHTML = ''; return; }
+    var lista = '';
+    sinFecha.forEach(function(ev){
+      lista += '<span class="day-ev tipo-' + esc(ev.tipo || 'social') + ' day-ev-tentativo" ' +
+        'title="' + esc(ev.detalle || '') + '">' + esc(ev.titulo) +
+        (ev.fechaTexto ? ' <i>· ' + esc(ev.fechaTexto) + '</i>' : '') + '</span>';
+    });
+    caja.innerHTML = '<div class="month-pendientes">' +
+      '<h4>Sin día definido <span>· ' + sinFecha.length +
+        ' en todo el plan, no solo en este mes</span></h4>' +
+      '<div class="month-pendientes-lista">' + lista + '</div></div>';
   }
 
   // Event Listeners de cambio de vista
@@ -530,6 +566,8 @@
       [].forEach.call(filtrosBox.querySelectorAll('.chip'), function(b){ b.setAttribute('aria-pressed', String(b === btn)); });
       filtroActivo = btn.dataset.tipo;
       renderTimeline();
+      // El filtro vale para las dos vistas, no solo para el cronograma.
+      if (vistaActiva === 'month') renderMonthGrid();
     });
   });
 })();
