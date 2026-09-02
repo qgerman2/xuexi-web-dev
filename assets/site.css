@@ -1123,3 +1123,9 @@ footer{border-top:1px solid var(--line);padding:clamp(34px,5vw,58px) 0 40px}
 .coord-declarado{font-family:var(--sans);font-size:.72rem;color:var(--gold);letter-spacing:.02em}
 .coord-btn-mini.coord-confirmar{border-color:var(--gold);background:rgba(212,175,97,.16);color:var(--gold)}
 .coord-btn-mini.coord-confirmar:hover{background:rgba(212,175,97,.28)}
+
+/* Botón destructivo: borra el calendario entero. Se distingue del resto a
+   propósito, para que nadie lo pulse creyendo que solo agrega. */
+.coord-btn-mini.coord-btn-riesgo{border-color:var(--vermilion);color:#E8836F;
+  background:rgba(192,57,43,.12)}
+.coord-btn-mini.coord-btn-riesgo:hover{background:rgba(192,57,43,.24)}

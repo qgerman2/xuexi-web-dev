@@ -280,50 +280,76 @@
     ['Visita Xuexi al templo','','','Diciembre · sin día definido','social','','','Templo Fo Guang Shan']
   ];
 
-  // Cuántos documentos pudo dejar una importación anterior. Se borran los que
-  // sobran para que un plan más corto no deje actividades fantasma detrás.
-  var IMPORT_MAX = 40;
-
   function idImportado(i){
-    return 'wailian-2026-' + String(i).padStart(2, '0');
+    return 'organizador-2026-' + String(i).padStart(2, '0');
   }
 
+  // Firestore acepta como máximo 500 operaciones por lote.
+  var TOPE_LOTE = 400;
+
+  // Aplica una lista de operaciones en tandas, una tras otra. Devolver la
+  // promesa encadenada (y no lanzarlas todas a la vez) mantiene el orden:
+  // primero se vacía la colección, después se escribe el plan nuevo.
+  function enTandas(ops){
+    var tandas = [];
+    for (var i = 0; i < ops.length; i += TOPE_LOTE) tandas.push(ops.slice(i, i + TOPE_LOTE));
+    return tandas.reduce(function(cadena, tanda){
+      return cadena.then(function(){
+        var lote = db.batch();
+        tanda.forEach(function(op){ op(lote); });
+        return lote.commit();
+      });
+    }, Promise.resolve());
+  }
+
+  // Deja el calendario interno EXACTAMENTE como el Organizador Mensual:
+  // primero borra todo lo que hay, después escribe el plan. Es destructivo a
+  // propósito — se pidió partir de cero porque arrastrar importaciones viejas
+  // junto a las nuevas estaba confundiendo a la coordinación.
   function importarPlan(){
     var caja = document.getElementById('coord-import-resultado');
-    if (!confirm('Se reemplazará el plan importado por las ' + PLAN_ORGANIZADOR.length +
-        ' actividades del Organizador Mensual (agosto a diciembre de 2026).\n\n' +
-        'Las actividades que la coordinación agregó a mano NO se tocan, pero sí se ' +
-        'pierden los cambios hechos sobre las actividades importadas antes. ¿Continuar?')) return;
-    caja.innerHTML = 'Importando…';
+    if (!confirm('Se BORRARÁ todo el calendario interno actual y quedarán solo las ' +
+        PLAN_ORGANIZADOR.length + ' actividades del Organizador Mensual ' +
+        '(agosto a diciembre de 2026).\n\n' +
+        'Esto incluye las actividades agregadas a mano: también se borran. ' +
+        'No se puede deshacer. ¿Continuar?')) return;
+    caja.innerHTML = 'Vaciando el calendario…';
 
-    var lote = db.batch();
-    PLAN_ORGANIZADOR.forEach(function(a, i){
-      lote.set(db.collection('calendario_interno').doc(idImportado(i + 1)), {
-        titulo: a[0],
-        fecha: a[1],          // vacía si el organizador no da un día concreto
-        fechaFin: a[2],       // solo en las actividades que ocupan varios días
-        fechaTexto: a[3],     // lo que dice el organizador, tal cual
-        confirmada: false,    // es una planificación, no una agenda cerrada
-        hora: '',
-        lugar: '',
-        tipo: a[4],
-        detalle: a[5],
-        responsable: a[6],
-        colaborador: a[7],
-        comision: 'wailian',
-        origen: 'organizador-mensual-2026',
-        creadoPor: usuario.uid
+    db.collection('calendario_interno').get().then(function(snap){
+      var borrados = snap.size;
+      var ops = [];
+      snap.forEach(function(doc){
+        ops.push(function(lote){ lote.delete(doc.ref); });
       });
-    });
-    // Sobrantes de la importación anterior, que era más larga o más corta.
-    for (var j = PLAN_ORGANIZADOR.length + 1; j <= IMPORT_MAX; j++){
-      lote.delete(db.collection('calendario_interno').doc(idImportado(j)));
-    }
 
-    lote.commit().then(function(){
-      caja.innerHTML = '<p class="coord-ok">Se sincronizaron ' + PLAN_ORGANIZADOR.length +
-        ' actividades. Puedes volver a pulsar el botón cuando cambie el organizador: ' +
-        'se sobrescriben, no se duplican.</p>';
+      PLAN_ORGANIZADOR.forEach(function(a, i){
+        var ref = db.collection('calendario_interno').doc(idImportado(i + 1));
+        ops.push(function(lote){
+          lote.set(ref, {
+            titulo: a[0],
+            fecha: a[1],          // vacía si el organizador no da un día concreto
+            fechaFin: a[2],       // solo en las actividades que ocupan varios días
+            fechaTexto: a[3],     // lo que dice el organizador, tal cual
+            confirmada: false,    // es una planificación, no una agenda cerrada
+            hora: '',
+            lugar: '',
+            tipo: a[4],
+            detalle: a[5],
+            responsable: a[6],
+            colaborador: a[7],
+            comision: 'wailian',
+            origen: 'organizador-mensual-2026',
+            creadoPor: usuario.uid
+          });
+        });
+      });
+
+      caja.innerHTML = 'Escribiendo ' + PLAN_ORGANIZADOR.length + ' actividades…';
+      return enTandas(ops).then(function(){ return borrados; });
+    }).then(function(borrados){
+      caja.innerHTML = '<p class="coord-ok">Calendario reiniciado: se borraron ' + borrados +
+        ' actividades y quedaron las ' + PLAN_ORGANIZADOR.length + ' del organizador. ' +
+        'Puedes volver a pulsarlo cuando cambie el organizador.</p>';
       if (window.recargarCalendarioInterno) window.recargarCalendarioInterno();
     }).catch(function(e){
       caja.innerHTML = '<p class="coord-aviso coord-error">No se pudo importar: ' + esc(e.message) + '</p>';
@@ -522,11 +548,11 @@
         '<button class="btn btn-sello" id="coord-agregar-evento">Agregar actividad</button>' +
         '<div id="coord-cal-resultado"></div>' +
         '<div class="coord-import">' +
-          '<button class="coord-btn-mini" id="coord-importar">Sincronizar Organizador Mensual (' +
-            PLAN_ORGANIZADOR.length + ' actividades)</button>' +
-          '<p class="coord-sub">Agosto a diciembre de 2026, tal como están en el organizador. ' +
-            'Ninguna queda confirmada, así que se guardan solo aquí y no en la agenda pública. ' +
-            'Volver a pulsarlo sobrescribe: no duplica.</p>' +
+          '<button class="coord-btn-mini coord-btn-riesgo" id="coord-importar">Reiniciar calendario ' +
+            'con el Organizador Mensual (' + PLAN_ORGANIZADOR.length + ')</button>' +
+          '<p class="coord-sub">Borra TODO el calendario interno y lo deja solo con el ' +
+            'organizador de agosto a diciembre de 2026, incluidas las actividades agregadas ' +
+            'a mano. Ninguna queda confirmada, así que no pasan a la agenda pública.</p>' +
           '<div id="coord-import-resultado"></div>' +
         '</div>' +
       '</div>' +
