@@ -6,7 +6,7 @@
 <title>Portal de Miembros · Xuexi Club UC</title>
 <meta name="description" content="Calendario interno de actividades y recursos para integrantes del Xuexi Club UC.">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/site.css?v=20">
+<link rel="stylesheet" href="assets/site.css?v=21">
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -128,6 +128,20 @@
      La protección real está en firestore.rules, no en este atributo. -->
 <section id="coordinacion" hidden></section>
 
+<!-- Panel de cuotas Mercado Pago: lo activa assets/cuotas.js solo para admin. -->
+<section id="cuotas-admin" hidden>
+  <div class="wrap">
+    <div class="coord-bloque">
+      <h3>Cuotas Mercado Pago</h3>
+      <p class="coord-desc">Estado calculado por miembro, con cobros y suscripciones leídos desde el worker de pagos.</p>
+      <div class="coord-fila">
+        <button class="coord-btn-mini" id="cuotas-recargar" type="button">Recargar cuotas</button>
+      </div>
+      <div id="cuotas-panel"></div>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <footer>
@@ -163,10 +177,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-<script src="assets/firebase-config.js"></script>
+<script src="assets/firebase-config.js?v=26"></script>
 <script src="assets/nav.js?v=20"></script>
-<script src="assets/auth.js?v=20"></script>
-<script src="assets/coordinacion.js?v=20"></script>
+<script src="assets/auth.js?v=26"></script>
+<script src="assets/coordinacion.js?v=21"></script>
+<script src="assets/cuotas.js?v=27"></script>
 <script>
 (function(){
   document.getElementById('anio').textContent = new Date().getFullYear();
@@ -193,6 +208,7 @@
   var currMonth = currentDate.getMonth();
 
   var MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var PAYMENT_WORKER = 'https://mp.xuexiclub.workers.dev';
 
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -448,63 +464,228 @@
     renderMonthGrid();
   });
 
+  function diasDesdePagos(pagos){
+    var DAY = 86400000;
+    var expiry = (pagos || [])
+      .filter(function(p){ return p.status === 'approved' && !p.refunded; })
+      .map(function(p){ return new Date(p.date); })
+      .filter(function(d){ return !isNaN(d.getTime()); })
+      .sort(function(a,b){ return a - b; })
+      .reduce(function(exp, at){
+        return new Date(Math.max(exp, at.getTime()) + 30 * DAY).getTime();
+      }, 0);
+    return Math.max(0, Math.ceil((expiry - Date.now()) / DAY));
+  }
+
+  function ultimoPagoAprobado(pagos){
+    return (pagos || [])
+      .filter(function(p){ return p.status === 'approved' && !p.refunded; })
+      .sort(function(a,b){ return new Date(b.date) - new Date(a.date); })[0] || null;
+  }
+
+  function tierSeleccionado(){
+    var el = document.querySelector('input[name="payment-tier"]:checked');
+    return el ? el.value : 'rm';
+  }
+
+  function setPaymentMessage(msg, error){
+    var out = document.getElementById('payment-action-result');
+    if (!out) return;
+    out.textContent = msg || '';
+    out.className = 'pay-result' + (error ? ' pay-result-error' : '');
+  }
+
+  function pedirPago(ruta, opciones){
+    opciones = opciones || {};
+    var actual = firebase.auth().currentUser;
+    if (!actual) return Promise.reject(new Error('Necesitas iniciar sesión.'));
+    return actual.getIdToken().then(function(token){
+      var headers = { Authorization: 'Bearer ' + token };
+      if (opciones.body) headers['Content-Type'] = 'application/json';
+      return fetch(PAYMENT_WORKER + ruta, {
+        method: opciones.method || 'GET',
+        headers: headers,
+        body: opciones.body ? JSON.stringify(opciones.body) : undefined
+      });
+    }).then(function(r){
+      return r.text().then(function(txt){
+        var cuerpo = txt ? JSON.parse(txt) : {};
+        if (!r.ok) throw new Error(cuerpo.error || 'No se pudo contactar el sistema de pagos.');
+        return cuerpo;
+      });
+    });
+  }
+
+  function obtenerEstadoPago(){
+    return pedirPago('/me');
+  }
+
+  function crearPago(tier){
+    return pedirPago('/payment', {method:'POST', body:{tier:tier}});
+  }
+
+  function crearSuscripcion(tier, mpEmail){
+    return pedirPago('/subscription', {method:'POST', body:{tier:tier, mpEmail:mpEmail}});
+  }
+
+  function cancelarSuscripcion(){
+    return pedirPago('/subscription', {method:'DELETE'});
+  }
+
+  function renderPaymentShell(config){
+    var payBox = document.getElementById('payment-status-box');
+    if (!payBox) return;
+    payBox.innerHTML = '<div class="payment-card-status pendiente">' +
+      '<div class="pay-status-info">' +
+        '<div class="pay-seal-icon">会</div>' +
+        '<div>' +
+          '<span class="pay-status-badge badge-pendiente">Consultando</span>' +
+          '<h3 class="pay-status-title"><span class="zh">会费</span>Cuotas de membresía</h3>' +
+          '<p class="pay-status-sub">Leyendo tu estado de pagos en Mercado Pago.</p>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
   // Render Tarjeta de Estado de Pago de Membresía
-  function renderPaymentStatus(user, config){
+  function renderPaymentStatus(user, config, estado){
     var payBox = document.getElementById('payment-status-box');
     if (!payBox) return;
 
-    // El estado de cuota todavía no está sincronizado con la contabilidad, así
-    // que no afirmamos ninguno. Lo que sí se puede es avisar que ya se pagó:
-    // queda como constancia y la coordinación lo confirma contra la cartola.
+    if (!estado) {
+      renderPaymentShell(config);
+      return;
+    }
+
     var general = (config && config.textoMontoGeneral) || '$2.000 CLP (General / RM)';
     var region  = (config && config.textoMontoRegion)  || '$1.000 CLP (Regiones)';
-    var linkGen = (config && config.linkMercadoPagoGeneral) || '';
-    var linkReg = (config && config.linkMercadoPagoRegion)  || '';
-    var aviso   = user && user.pagoDeclarado;
-
-    function boton(link, texto, clase, hanzi){
-      if (!link) return '';
-      return '<a href="' + esc(link) + '" target="_blank" rel="noopener" class="' + clase + '">' +
-        '<span class="zh">' + hanzi + '</span> <span>' + esc(texto) + '</span></a>';
+    var pagos = estado.payments || [];
+    var sub = estado.subscription || null;
+    var dias = diasDesdePagos(pagos);
+    var ultimo = ultimoPagoAprobado(pagos);
+    var puedePagoUnico = !sub && dias < 15;
+    var estadoClase = sub ? (sub.health === 'failing' ? 'vencida' : 'al-dia') : (dias > 0 ? 'al-dia' : 'pendiente');
+    var badgeClase = estadoClase === 'vencida' ? 'badge-vencida' : (estadoClase === 'al-dia' ? 'badge-al-dia' : 'badge-pendiente');
+    var badge = sub
+      ? (sub.health === 'ok' ? 'Suscripción activa' :
+         sub.health === 'retrying' ? 'Reintentando cobro' :
+         sub.health === 'failing' ? 'Revisar pago' : 'Suscripción pendiente')
+      : (dias > 0 ? dias + ' días disponibles' : 'Sin días activos');
+    var titulo = sub ? 'Suscripción mensual' : 'Cuotas de membresía';
+    var detalle = sub
+      ? 'Tu suscripción está vinculada a tu cuenta de miembro. Los cobros exitosos suman 30 días al historial.'
+      : (puedePagoUnico
+          ? 'Puedes pagar una cuota única por 30 días o activar una suscripción mensual.'
+          : 'Aún tienes 15 días o más disponibles. Puedes activar una suscripción ahora; la primera fecha de cobro respeta tus días acumulados.');
+    if (sub && (sub.health === 'retrying' || sub.health === 'failing')) {
+      detalle = 'Mercado Pago reporta problemas con la suscripción. Puedes cancelarla y crear una nueva con otro medio de pago.';
     }
-    var botones = boton(linkGen, 'Pagar ' + general, 'pay-btn-gold', '付费') +
-                  boton(linkReg, 'Pagar ' + region,  'pay-btn-jade', '地域');
 
-    var bloqueAviso = aviso
-      ? '<p class="pay-status-sub pay-declarado">✓ Avisaste que pagaste el ' + esc(aviso.fecha) +
-          '. La coordinación lo está revisando.</p>'
-      : '<button type="button" class="coord-btn-mini" id="btn-declarar-pago" ' +
-          'style="margin-top:10px">Ya pagué mi cuota</button>' +
-        '<span class="coord-sub" id="declarar-resultado"></span>';
+    var historial = '<div class="pay-ledger">' +
+      '<span><b>' + dias + '</b> días restantes</span>' +
+      '<span><b>' + pagos.length + '</b> cobros registrados</span>' +
+      (ultimo ? '<span>Último pago: ' + esc(new Date(ultimo.date).toLocaleDateString('es-CL')) + '</span>' : '<span>Sin pagos aprobados todavía</span>') +
+      (sub && sub.nextPaymentDate ? '<span>Próximo cobro: ' + esc(new Date(sub.nextPaymentDate).toLocaleDateString('es-CL')) + '</span>' : '') +
+    '</div>';
 
-    payBox.innerHTML = '<div class="payment-card-status pendiente">' +
+    var selectorTier = '<div class="pay-tier-group" role="radiogroup" aria-label="Tipo de cuota">' +
+      '<label class="pay-tier"><input type="radio" name="payment-tier" value="rm" checked> ' +
+        '<span><b>RM</b><small>' + esc(general) + '</small></span></label>' +
+      '<label class="pay-tier"><input type="radio" name="payment-tier" value="regiones"> ' +
+        '<span><b>Regiones</b><small>' + esc(region) + '</small></span></label>' +
+    '</div>';
+
+    var acciones = '';
+    if (sub) {
+      acciones = '<div class="pay-actions-panel">' +
+        (sub.health === 'retrying' || sub.health === 'failing'
+          ? selectorTier +
+            '<label class="pay-field">Correo de Mercado Pago<input type="email" id="mp-email" placeholder="correo@gmail.com" autocomplete="email"></label>' +
+            '<button type="button" class="pay-btn-gold" data-pay-action="replace-sub">Cancelar y crear nueva suscripción</button>'
+          : '') +
+        '<button type="button" class="pay-btn-link" data-pay-action="cancel-sub">Cancelar suscripción</button>' +
+        '<p class="pay-result" id="payment-action-result"></p>' +
+      '</div>';
+    } else {
+      acciones = '<div class="pay-actions-panel">' +
+        selectorTier +
+        '<div class="pay-action-row">' +
+          '<button type="button" class="pay-btn-gold" data-pay-action="oneoff"' + (puedePagoUnico ? '' : ' disabled') + '>Pagar 30 días</button>' +
+          '<div class="pay-subscribe-box">' +
+            '<label class="pay-field">Correo de Mercado Pago<input type="email" id="mp-email" placeholder="correo@gmail.com" autocomplete="email"></label>' +
+            '<button type="button" class="pay-btn-jade" data-pay-action="subscribe">Suscribirme mensual</button>' +
+          '</div>' +
+        '</div>' +
+        (!puedePagoUnico ? '<p class="pay-status-sub">El pago único se habilita cuando quedan menos de 15 días.</p>' : '') +
+        '<p class="pay-result" id="payment-action-result"></p>' +
+      '</div>';
+    }
+
+    payBox.innerHTML = '<div class="payment-card-status ' + estadoClase + '">' +
       '<div class="pay-status-info">' +
         '<div class="pay-seal-icon">印</div>' +
         '<div>' +
-          '<span class="pay-status-badge badge-proximamente">' +
-            (aviso ? 'En revisión' : 'En preparación') + '</span>' +
-          '<h3 class="pay-status-title"><span class="zh">会费</span>Cuotas de membresía</h3>' +
-          '<p class="pay-status-sub">Pronto incluiremos aquí tu estado actual de cuota. ' +
-            'Estamos sincronizando los registros con la tesorería del club.</p>' +
-          (botones ? '<p class="pay-status-sub" style="margin-top:6px">Si quieres adelantar tu pago, ' +
-            'puedes hacerlo desde aquí: ' + esc(general) + ' o ' + esc(region) + '.</p>' : '') +
-          bloqueAviso +
+          '<span class="pay-status-badge ' + badgeClase + '">' + esc(badge) + '</span>' +
+          '<h3 class="pay-status-title"><span class="zh">会费</span>' + esc(titulo) + '</h3>' +
+          '<p class="pay-status-sub">' + esc(detalle) + '</p>' +
+          historial +
         '</div>' +
       '</div>' +
-      (botones ? '<div class="pay-actions-group">' + botones + '</div>' : '') +
+      acciones +
     '</div>';
 
-    var btn = document.getElementById('btn-declarar-pago');
-    if (btn) btn.addEventListener('click', function(){
-      var salida = document.getElementById('declarar-resultado');
-      btn.disabled = true; salida.textContent = ' Enviando…';
-      window.XuexiAuth.declararPago().then(function(){
-        salida.textContent = ' ✓ Avisado. La coordinación lo revisará.';
-        btn.remove();
-      }).catch(function(e){
-        btn.disabled = false; salida.textContent = ' No se pudo avisar: ' + e.message;
+    [].forEach.call(payBox.querySelectorAll('[data-pay-action]'), function(btn){
+      btn.addEventListener('click', function(){
+        var action = btn.getAttribute('data-pay-action');
+        var tier = tierSeleccionado();
+        var emailEl = document.getElementById('mp-email');
+        var mpEmail = emailEl ? emailEl.value.trim() : '';
+        btn.disabled = true;
+        setPaymentMessage('Preparando Mercado Pago…');
+
+        var p;
+        if (action === 'oneoff') {
+          p = crearPago(tier);
+        } else if (action === 'subscribe') {
+          p = crearSuscripcion(tier, mpEmail);
+        } else if (action === 'replace-sub') {
+          p = cancelarSuscripcion()
+            .then(function(){ return crearSuscripcion(tier, mpEmail); });
+        } else {
+          p = cancelarSuscripcion().then(function(){
+            setPaymentMessage('Suscripción cancelada. Actualizando estado…');
+            return obtenerEstadoPago().then(function(nuevo){
+              renderPaymentStatus(user, config, nuevo);
+              return {};
+            });
+          });
+        }
+
+        p.then(function(res){
+          if (res && res.url) {
+            window.location.href = res.url;
+          }
+        }).catch(function(e){
+          btn.disabled = false;
+          setPaymentMessage(e.message, true);
+        });
       });
     });
+  }
+
+  function renderPaymentError(config, error){
+    var payBox = document.getElementById('payment-status-box');
+    if (!payBox) return;
+    payBox.innerHTML = '<div class="payment-card-status vencida">' +
+      '<div class="pay-status-info">' +
+        '<div class="pay-seal-icon">!</div>' +
+        '<div>' +
+          '<span class="pay-status-badge badge-vencida">Pagos no disponibles</span>' +
+          '<h3 class="pay-status-title"><span class="zh">会费</span>Cuotas de membresía</h3>' +
+          '<p class="pay-status-sub">' + esc(error && error.message || 'No se pudo leer el sistema de pagos.') + '</p>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
   }
 
   // Proteger ruta y cargar datos
@@ -518,6 +699,7 @@
     // nada; y aunque alguien la invocara a mano, Firestore rechazaría las
     // escrituras.
     if (window.XuexiCoordinacion) window.XuexiCoordinacion.iniciar(user);
+    if (window.XuexiCuotas) window.XuexiCuotas.iniciar(user);
 
     memberName.textContent = user.nombre || user.displayName || (user.email ? user.email.split('@')[0] : 'Miembro Xuexi');
     memberEmail.textContent = (user.email || '') + (user.comision ? ' · Comisión ' + user.comision.toUpperCase() : '');
@@ -525,8 +707,13 @@
     // Cargar configuración de pago y calendario
     window.XuexiAuth.obtenerConfigMembresia().then(function(config){
       renderPaymentStatus(user, config);
-    }).catch(function(){
-      renderPaymentStatus(user, null);
+      return obtenerEstadoPago().then(function(estado){
+        renderPaymentStatus(user, config, estado);
+      }).catch(function(e){
+        renderPaymentError(config, e);
+      });
+    }).catch(function(e){
+      renderPaymentError(null, e);
     });
 
     // Recargable: la coordinación la llama tras agregar o eliminar actividades.
@@ -574,4 +761,3 @@
 </script>
 </body>
 </html>
-
