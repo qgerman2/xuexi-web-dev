@@ -75,7 +75,16 @@ collections:
         date_format: 'DD-MM-YYYY'
         time_format: false
         picker_utc: true
-      - { label: Hora, name: hora, widget: string, required: false, hint: 'Ej. 18:30' }
+      - label: Hora
+        name: hora
+        widget: string
+        required: false
+        default: '15:00'
+        # El panel viejo usaba <input type=time>, que no deja escribir
+        # cualquier cosa. Decap no tiene ese widget, así que lo cuidamos
+        # con un patrón: si no, acaban conviviendo "18:30", "18.30" y "6 PM".
+        pattern: ['^([01][0-9]|2[0-3]):[0-5][0-9]$', 'Usa HH:MM de 24 horas. Ej. 18:30']
+        hint: 'Ej. 18:30'
       - { label: Lugar, name: lugar, widget: string, required: false }
       - { label: Detalle, name: detalle, widget: text, required: false }
       - label: Tipo
@@ -104,29 +113,60 @@ collections:
         name: comision
         widget: select
         required: false
+        # El panel viejo cambiaba el texto de ayuda según la comisión elegida.
+        # Decap solo admite una ayuda fija, así que van las tres juntas.
+        hint: >-
+          外联 Wailian gestiona talleres, charlas, almuerzos, festivales y
+          stands (Art. 6.3) · 学习 Xuexi organiza congresos y jornadas con fin
+          académico (Art. 5) · 信息 Xinxi difunde las actividades de las otras
+          comisiones (Art. 7).
         options:
           - { label: 学习 Xuexi · Conocimiento Académico, value: xuexi }
           - { label: 外联 Wailian · Idioma y Comunidad, value: wailian }
           - { label: 信息 Xinxi · Difusión y Diseño, value: xinxi }
-      - { label: Área temática, name: areaEtiqueta, widget: string, required: false }
-      - { label: Ciclo, name: ciclo, widget: string, required: false }
+      - label: Área temática
+        name: areaEtiqueta
+        widget: select
+        required: false
+        # Lista cerrada, como en el panel viejo: en texto libre acaban
+        # apareciendo "Cultura y lengua" y "Cultura y Lengua" como cosas
+        # distintas. Las cinco áreas son las de los Estatutos.
+        options:
+          - Economía y Negocios
+          - Cultura y Lengua
+          - RR.II. y Diplomacia
+          - Políticas Públicas y Gobernanza
+          - Ciencia y Tecnología
+      - label: Ciclo
+        name: ciclo
+        widget: select
+        required: false
+        default: segundo-semestre
+        options:
+          - { label: '2° semestre · oct–nov', value: segundo-semestre }
+          - { label: '1er semestre · may–jun', value: primer-semestre }
       - { label: Cupos, name: cupos, widget: number, required: false, default: 0, value_type: int, min: 0 }
-      - { label: Carácter chino, name: hanzi, widget: string, required: false, hint: 'Se muestra si no hay imagen. Ej. 书' }
+      - label: Carácter chino
+        name: hanzi
+        widget: string
+        required: false
+        pattern: ['^.{0,2}$', 'Como mucho dos caracteres']
+        hint: 'Se muestra si no hay imagen de portada. Ej. 书'
       - { label: Imagen de portada, name: imagen, widget: image, required: false, allow_multiple: false,
           hint: 'La que se ve en la agenda, encabeza la subpágina y sale al compartir el enlace.' }
       - label: Galería de fotos
         name: galeria
         widget: image
         required: false
-        # Con allow_multiple se pueden elegir y subir varias de una vez, en
-        # vez de abrir el selector foto por foto como con una lista.
+        # allow_multiple permite que el campo guarde varias fotos a la vez.
+        # (media_library.config.multiple no se pone: solo lo entienden las
+        # bibliotecas externas tipo Cloudinary, no la del propio repositorio.)
         allow_multiple: true
-        media_library:
-          config:
-            multiple: true
         hint: >-
-          Fotos del evento. Puedes seleccionar varias a la vez. Aparecen en la
-          subpágina del evento y en la página Galería.
+          Fotos del evento. Para subir varias de golpe, arrástralas sobre la
+          zona «Drag files here or click to upload» de la ventana de medios:
+          el botón «Upload» solo admite una. Aparecen en la subpágina del
+          evento y en la página Galería.
 
   # ────────────────────────── REPORTAJES ─────────────────────────
   - name: investigacion
