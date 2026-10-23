@@ -98,6 +98,24 @@
 
   var decapCargado = false;
 
+  // Cada etapa deja su rastro en pantalla. Entre entrar y ver el editor hay
+  // tres viajes de red (Firestore, el conector, el paquete de Decap) y en una
+  // conexión lenta eso son diez segundos largos: sin esto, parece colgado.
+  var etapa = '';
+  var vigilante = null;
+
+  function paso(texto){
+    etapa = texto;
+    sub.textContent = texto;
+    clearTimeout(vigilante);
+    vigilante = setTimeout(function(){
+      if (!puerta.classList.contains('oculto')) {
+        decir('Sigue en «' + etapa + '» más de lo normal. Suele ser la red; '
+              + 'déjalo un momento más. Si no avanza, recarga la página.', 'aviso');
+      }
+    }, 12000);
+  }
+
   function decir(texto, clase){
     msj.textContent = texto;
     msj.className = 'msj ' + (clase || 'error');
@@ -116,6 +134,9 @@
   function cargarDecap(){
     if (decapCargado) return;
     decapCargado = true;
+    clearTimeout(vigilante);
+    sub.textContent = '';
+    decir('');
     puerta.classList.add('oculto');
     var s = document.createElement('script');
     s.src = DECAP_SRC;
@@ -142,10 +163,17 @@
   function pedirSesion(user){
     return Promise.all([user.getIdToken(), direccionWorker()])
       .then(function(r){
+        // Sin límite, una petición que nunca responde deja la pantalla fija.
+        var corte = new AbortController();
+        var reloj = setTimeout(function(){ corte.abort(); }, 25000);
         return fetch(r[1] + '/sesion', {
           method: 'POST',
-          headers: { Authorization: 'Bearer ' + r[0] }
-        });
+          headers: { Authorization: 'Bearer ' + r[0] },
+          signal: corte.signal
+        }).then(function(x){ clearTimeout(reloj); return x; },
+                function(e){ clearTimeout(reloj);
+                  throw new Error(e.name === 'AbortError'
+                    ? 'el conector no respondió en 25 segundos' : e.message); });
       })
       .then(function(resp){
         if (!resp.ok) throw new Error('El conector rechazó la sesión (' + resp.status + ')');
@@ -202,7 +230,7 @@
       return;
     }
 
-    sub.textContent = 'Comprobando permisos…';
+    paso('Comprobando permisos…');
     form.hidden = true;
 
     comprobarRol(user).then(function(perfil){
@@ -213,7 +241,9 @@
         salir.hidden = false;
         return;
       }
+      paso('Abriendo sesión con el conector…');
       return sembrarSesion(user, perfil).then(function(){
+        paso('Cargando el editor…');
         mantenerVivo(user, perfil);
         cargarDecap();
       }).catch(function(e){
@@ -221,6 +251,7 @@
         // conector. "Failed to fetch" casi siempre significa que el Worker
         // desplegado todavía no tiene la ruta /sesion, o que este origen no
         // está en su lista de permitidos.
+        clearTimeout(vigilante);
         sub.textContent = '';
         decir('No se pudo abrir sesión con el conector: ' + (e.message || e)
               + '. Comprueba que el Worker esté actualizado y que este origen '
@@ -228,6 +259,7 @@
         salir.hidden = false;
       });
     }).catch(function(e){
+      clearTimeout(vigilante);
       sub.textContent = '';
       decir('No se pudo comprobar tu perfil: ' + (e.message || e));
       salir.hidden = false;
