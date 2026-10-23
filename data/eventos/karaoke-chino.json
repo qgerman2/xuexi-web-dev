@@ -1,0 +1,19 @@
+{
+  "id": "karaoke-chino",
+  "titulo": "Karaoke chino 开麦吧!!",
+  "fecha": "2026-08-03",
+  "hora": "11:00",
+  "lugar": "Zona 2, Campus San Joaquín UC",
+  "tipo": "festival",
+  "estado": "lleno",
+  "comision": "wailian",
+  "areaEtiqueta": "Cultura y Lengua",
+  "ciclo": "segundo-semestre",
+  "cupos": 0,
+  "hanzi": "麦",
+  "imagen": "reencuentro-karaoke.jpg",
+  "detalle": "Parte de Reencuentro UC. Organiza Xuexi Club UC, con El Viaje del Estudiante UC. Apoya Primavera UC. Inscripción previa por QR. De 11:00 a 13:00 hrs.",
+  "galeria": [
+    "reencuentro-karaoke.jpg"
+  ]
+}

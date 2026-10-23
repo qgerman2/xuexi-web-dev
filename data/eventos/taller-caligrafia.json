@@ -1,0 +1,19 @@
+{
+  "id": "taller-caligrafia",
+  "titulo": "Taller de Caligrafía China",
+  "fecha": "2026-08-03",
+  "hora": "11:00",
+  "lugar": "Zona 2, Campus San Joaquín UC",
+  "tipo": "taller",
+  "estado": "lleno",
+  "comision": "wailian",
+  "areaEtiqueta": "Cultura y Lengua",
+  "ciclo": "segundo-semestre",
+  "cupos": 0,
+  "hanzi": "笔",
+  "imagen": "reencuentro-caligrafia.jpg",
+  "detalle": "Parte de Reencuentro UC. Organiza Xuexi Club UC, con El Viaje del Estudiante UC. Apoya Primavera UC. Inscripción previa por QR. De 11:00 a 13:10 hrs.",
+  "galeria": [
+    "reencuentro-caligrafia.jpg"
+  ]
+}

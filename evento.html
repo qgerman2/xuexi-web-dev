@@ -205,7 +205,10 @@
   });
 
   var params = new URLSearchParams(window.location.search);
-  var targetId = params.get('id') || '';
+  // Las páginas de /evento/<id>/ traen el identificador puesto en el HTML
+  // (lo genera tools/generar-paginas-evento.py). Si no, se usa ?id=, que
+  // sigue funcionando para los enlaces antiguos.
+  var targetId = window.EVENTO_ID || params.get('id') || '';
   var contenedor = document.getElementById('contenedor-evento');
 
   window.cargarEventos().then(function(data){

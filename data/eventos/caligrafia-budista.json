@@ -1,0 +1,19 @@
+{
+  "id": "caligrafia-budista",
+  "titulo": "Taller de Caligrafía y Charla Budista",
+  "fecha": "2025-11-13",
+  "hora": "14:50",
+  "lugar": "Templo Fo Guang Shan (佛光山)",
+  "tipo": "taller",
+  "estado": "realizado",
+  "comision": "wailian",
+  "areaEtiqueta": "Cultura y Lengua",
+  "ciclo": "segundo-semestre",
+  "cupos": 0,
+  "hanzi": "书",
+  "imagen": "templo.jpg",
+  "detalle": "En colaboración con la Organización Budista Fo Guang Shan.",
+  "galeria": [
+    "templo.jpg"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "cocina-china",
+  "titulo": "Taller de Cocina China: salteado de repollo con fideos de arroz y huevo",
+  "fecha": "2025-11-07",
+  "hora": "15:00",
+  "lugar": "Laboratorio de Técnicas Alimentarias, Campus San Joaquín UC",
+  "tipo": "taller",
+  "estado": "realizado",
+  "comision": "wailian",
+  "areaEtiqueta": "Cultura y Lengua",
+  "ciclo": "segundo-semestre",
+  "cupos": 20,
+  "hanzi": "食",
+  "imagen": "cocina.jpg",
+  "detalle": "Impartido por Nathaly Jeria, Letras Inglesas UC. Nutrición y Dietética.",
+  "galeria": [
+    "cocina.jpg"
+  ]
+}
