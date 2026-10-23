@@ -11,9 +11,9 @@
   "ciclo": "segundo-semestre",
   "cupos": 20,
   "hanzi": "食",
-  "imagen": "cocina.jpg",
+  "imagen": "assets/eventos/cocina-china/cocina.jpg",
   "detalle": "Impartido por Nathaly Jeria, Letras Inglesas UC. Nutrición y Dietética.",
   "galeria": [
-    "cocina.jpg"
+    "assets/eventos/cocina-china/cocina.jpg"
   ]
 }

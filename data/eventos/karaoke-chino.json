@@ -11,9 +11,9 @@
   "ciclo": "segundo-semestre",
   "cupos": 0,
   "hanzi": "麦",
-  "imagen": "reencuentro-karaoke.jpg",
+  "imagen": "assets/eventos/karaoke-chino/reencuentro-karaoke.jpg",
   "detalle": "Parte de Reencuentro UC. Organiza Xuexi Club UC, con El Viaje del Estudiante UC. Apoya Primavera UC. Inscripción previa por QR. De 11:00 a 13:00 hrs.",
   "galeria": [
-    "reencuentro-karaoke.jpg"
+    "assets/eventos/karaoke-chino/reencuentro-karaoke.jpg"
   ]
 }

@@ -35,10 +35,26 @@ collections:
     create: true
     extension: json
     format: json
-    identifier_field: titulo
+    # El identificador es 'id', no el título: de ahí sale {{slug}}, que
+    # nombra el archivo Y la carpeta de medios. Si fuera el título,
+    # la carpeta llevaría acentos y hanzi, y se movería al reescribir
+    # el título. En la lista se sigue viendo el título por 'summary'.
+    identifier_field: id
     slug: '{{fields.id}}'
     summary: '{{fecha}} · {{titulo}}'
-    sortable_fields: [fecha, titulo, tipo]
+    # El objeto con default_sort lo admite Decap 3.10+; está fijada la 3.17.1.
+    # 'desc' = lo más reciente arriba, que es como se trabaja la agenda.
+    sortable_fields:
+      - { field: fecha, default_sort: desc }
+      - titulo
+      - tipo
+    # Cada evento sube sus fotos a su propia carpeta. Así el selector de
+    # imágenes muestra SOLO las de este evento y no el repositorio entero:
+    # en un evento nuevo aparece vacío, o sea, directo a "subir".
+    # Ojo: {{slug}} es el Identificador, así que hay que rellenarlo ANTES
+    # de subir nada, o las fotos acaban en una carpeta equivocada.
+    media_folder: '/assets/eventos/{{slug}}'
+    public_folder: 'assets/eventos/{{slug}}'
     description: >-
       Actividades del club. Los eventos con fecha pasada se mueven solos a
       "Eventos anteriores": no hay que borrarlos.
@@ -100,32 +116,17 @@ collections:
           hint: 'La que se ve en la agenda, encabeza la subpágina y sale al compartir el enlace.' }
       - label: Galería de fotos
         name: galeria
-        widget: list
+        widget: image
         required: false
-        label_singular: foto
-        allow_add: true
+        # Con allow_multiple se pueden elegir y subir varias de una vez, en
+        # vez de abrir el selector foto por foto como con una lista.
+        allow_multiple: true
+        media_library:
+          config:
+            multiple: true
         hint: >-
-          Fotos del evento. Aparecen en la subpágina del evento y en la
-          página Galería. Arrastra para cambiar el orden.
-        field: { label: Foto, name: foto, widget: image }
-
-  # ────────────────────── CABECERA DE LA AGENDA ──────────────────────
-  # Lo que no es un evento pero sale en la página de agenda. Vive aparte
-  # porque data/eventos.json se regenera entero y no se puede editar.
-  - name: agenda_cabecera
-    label: Agenda · cabecera
-    files:
-      - name: cabecera
-        label: Cabecera
-        file: data/agenda.json
-        format: json
-        fields:
-          - { name: _instrucciones, widget: hidden }
-          - { name: _referencia, widget: hidden }
-          - label: Temporada
-            name: temporada
-            widget: string
-            hint: Texto que aparece junto al título "Agenda viva". Ej. "Segundo semestre 2026"
+          Fotos del evento. Puedes seleccionar varias a la vez. Aparecen en la
+          subpágina del evento y en la página Galería.
 
   # ────────────────────────── REPORTAJES ─────────────────────────
   - name: investigacion

@@ -57,8 +57,7 @@
 
 <section>
   <div class="wrap">
-    <div class="sec-h"><span class="zh">活动</span><h2>Agenda viva</h2>
-      <span class="more" id="temporada"></span></div>
+    <div class="sec-h"><span class="zh">活动</span><h2>Agenda viva</h2></div>
 
     <div class="week" id="destacado" hidden>
       <span class="zh">本周</span>
@@ -267,7 +266,6 @@
   cargarEventos()
     .then(function(data){
       eventos = (data.eventos || []).sort(function(a,b){ return fecha(a.fecha) - fecha(b.fecha); });
-      if (data.temporada) document.getElementById('temporada').textContent = data.temporada;
       pintar();
       destacar();
     })

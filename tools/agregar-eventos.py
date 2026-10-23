@@ -6,8 +6,7 @@ enlazar cada uno por separado. Pero el sitio es estático: no puede listar una
 carpeta, así que necesita un único archivo que leer de una vez. Esto lo arma.
 
 data/eventos.json pasa a ser GENERADO: no se edita a mano, se regenera desde
-la carpeta. Lo que no sea la lista de eventos (temporada, _instrucciones,
-_referencia) se conserva tal cual estaba.
+la carpeta en cada cambio.
 
 El id de cada evento sale del NOMBRE DEL ARCHIVO, que es la única fuente de
 verdad: es la URL pública y la clave con la que se guardan sus fotos. Si el
@@ -24,7 +23,6 @@ import sys
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CARPETA = os.path.join(RAIZ, 'data', 'eventos')
 SALIDA = os.path.join(RAIZ, 'data', 'eventos.json')
-CABECERA = os.path.join(RAIZ, 'data', 'agenda.json')
 
 
 def main():
@@ -48,6 +46,22 @@ def main():
             continue
         if not e.get('titulo'):
             problemas.append(f'{f}: sin título')
+
+        # El widget de imagen múltiple guarda una cadena cuando solo eliges
+        # una foto, y una lista cuando eliges varias. El sitio comprueba
+        # Array.isArray antes de pintar la galería, así que una cadena se
+        # perdería en silencio. Aquí siempre sale lista.
+        g = e.get('galeria')
+        if isinstance(g, str):
+            e['galeria'] = [g] if g.strip() else []
+        elif g is None:
+            e.pop('galeria', None)
+        elif isinstance(g, list):
+            # Una lista de objetos {foto: ...} es el formato viejo del widget
+            # de lista; la aplanamos a rutas.
+            e['galeria'] = [x['foto'] if isinstance(x, dict) and 'foto' in x else x
+                            for x in g]
+
         eventos.append(e)
 
     if problemas:
@@ -60,13 +74,7 @@ def main():
     # principio: una cadena vacía ordenaría antes que cualquier fecha.
     eventos.sort(key=lambda e: (not e.get('fecha'), e.get('fecha') or '', e['id']))
 
-    # Lo que no son eventos (temporada y demás) vive aparte, en
-    # data/agenda.json, porque este archivo se regenera entero.
-    cabecera = {}
-    if os.path.exists(CABECERA):
-        cabecera = json.load(io.open(CABECERA, encoding='utf-8'))
-
-    salida = dict(cabecera)
+    salida = {}
     salida['_generado'] = ('Archivo generado por tools/agregar-eventos.py a partir '
                            'de data/eventos/. No lo edites a mano: se sobrescribe.')
     salida['eventos'] = eventos

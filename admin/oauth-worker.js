@@ -314,8 +314,19 @@ export default {
       let cuerpo;
       if (!['GET', 'HEAD'].includes(peticion.method)) {
         cuerpo = await peticion.text();
+
         // Quien firma el commit es la persona; quien lo sube, el panel.
-        if (url.pathname.includes('/contents/') || url.pathname.includes('/git/commits')) {
+        //
+        // Solo se toca el cuerpo si es pequeño. Al subir una foto, Decap manda
+        // la imagen entera en base64 dentro del JSON: un JPEG de 2 MB son casi
+        // 3 MB de texto, y parsearlo y volver a serializarlo se come el tiempo
+        // de CPU que tiene un Worker (en el plan gratuito, 10 ms). Si pasa del
+        // límite, el commit lo firma el dueño del token y ya está: perder la
+        // autoría de una foto es mucho mejor que fallar la subida.
+        const LIMITE = 256 * 1024;
+        const esCommit = url.pathname.includes('/contents/')
+                      || url.pathname.includes('/git/commits');
+        if (esCommit && cuerpo.length <= LIMITE) {
           try {
             const json = JSON.parse(cuerpo);
             json.author = { name: miembro.nombre, email: miembro.email };

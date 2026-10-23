@@ -11,9 +11,9 @@
   "ciclo": "segundo-semestre",
   "cupos": 0,
   "hanzi": "书",
-  "imagen": "templo.jpg",
+  "imagen": "assets/eventos/caligrafia-budista/templo.jpg",
   "detalle": "En colaboración con la Organización Budista Fo Guang Shan.",
   "galeria": [
-    "templo.jpg"
+    "assets/eventos/caligrafia-budista/templo.jpg"
   ]
 }

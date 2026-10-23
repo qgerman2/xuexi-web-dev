@@ -59,7 +59,7 @@
       .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
   }
 
-  // Devuelve siempre {temporada, eventos}, venga de donde venga.
+  // Devuelve siempre {eventos}, venga de donde venga.
   window.cargarEventos = function(){
     if (!URL_PLANILLA){ return desdeJSON(); }
 
@@ -68,10 +68,7 @@
       .then(function(txt){
         var evs = leerCSV(txt).map(normalizar).filter(function(e){ return e.titulo && e.fecha; });
         if (!evs.length) throw new Error('planilla vacía');
-        // La temporada sigue viniendo del JSON, que cambia una vez al año.
-        return desdeJSON()
-          .then(function(d){ return {temporada: d.temporada, eventos: evs}; })
-          .catch(function(){ return {temporada: '', eventos: evs}; });
+        return {eventos: evs};
       })
       .catch(function(err){
         console.warn('No se pudo leer la planilla, uso data/eventos.json:', err.message);
