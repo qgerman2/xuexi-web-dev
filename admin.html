@@ -18,9 +18,15 @@
        font-family:"Avenir Next",system-ui,-apple-system,"Segoe UI",sans-serif}
 
   /* ── Puerta ─────────────────────────────────────────────── */
-  #puerta{min-height:100vh;display:grid;place-items:center}
+  /* 63px es la altura de la cabecera del sitio: así la tarjeta queda
+     centrada en lo que queda de pantalla, no en la pantalla entera. */
+  #puerta{min-height:calc(100vh - 63px);display:grid;place-items:center}
   #puerta.oculto{display:none}
-  .caja{width:min(350px,88vw);display:grid;gap:12px}
+  .caja-marco{width:100%;display:grid;place-items:center}
+  .caja{width:min(360px,100%);display:grid;gap:12px;
+        padding:clamp(22px,3vw,30px);border-radius:10px;
+        border:1px solid var(--line,#4a3030);background:rgba(36,22,22,.72);
+        box-shadow:0 14px 34px -18px rgba(0,0,0,.7)}
   .caja h1{font-size:1.15rem;font-weight:600;margin:0;text-align:center}
   .zh{color:var(--oro)}
   .caja p.sub{margin:0 0 6px;text-align:center;font-size:.82rem;opacity:.7}
@@ -57,33 +63,7 @@
 </head>
 <body>
 
-<!-- ─────────────────────────── Puerta ─────────────────────────── -->
-<div id="puerta">
-  <div class="caja">
-    <h1><span class="zh">学习</span> Panel del equipo</h1>
-    <p class="sub" id="sub">Comprobando sesión…</p>
-    <div class="msj" id="msj"></div>
-
-    <form id="form" hidden>
-      <div style="display:grid;gap:12px">
-        <div>
-          <label for="correo">Correo electrónico</label>
-          <input id="correo" type="email" required autocomplete="username">
-        </div>
-        <div>
-          <label for="clave">Contraseña</label>
-          <input id="clave" type="password" required autocomplete="current-password">
-        </div>
-        <button id="entrar" type="submit">Entrar</button>
-      </div>
-    </form>
-
-    <button id="salir-puerta" class="secundario" hidden type="button">Cerrar sesión</button>
-  </div>
-</div>
-
-<!-- ────────────────────── Espacio de trabajo ────────────────────── -->
-<div id="taller">
+<!-- La cabecera del sitio se ve siempre, antes y después de entrar. -->
 <header class="nav">
   <div class="wrap row">
     <a class="brand" href="index.html">
@@ -125,6 +105,36 @@
     <a class="cta" href="index.html#unete">Únete</a>
   </div>
 </header>
+
+<!-- ─────────────────────────── Puerta ─────────────────────────── -->
+<div id="puerta">
+  <div class="marco caja-marco">
+   <div class="caja">
+    <h1><span class="zh">学习</span> Panel del equipo</h1>
+    <p class="sub" id="sub">Comprobando sesión…</p>
+    <div class="msj" id="msj"></div>
+
+    <form id="form" hidden>
+      <div style="display:grid;gap:12px">
+        <div>
+          <label for="correo">Correo electrónico</label>
+          <input id="correo" type="email" required autocomplete="username">
+        </div>
+        <div>
+          <label for="clave">Contraseña</label>
+          <input id="clave" type="password" required autocomplete="current-password">
+        </div>
+        <button id="entrar" type="submit">Entrar</button>
+      </div>
+    </form>
+
+    <button id="salir-puerta" class="secundario" hidden type="button">Cerrar sesión</button>
+   </div>
+  </div>
+</div>
+
+<!-- ────────────────────── Espacio de trabajo ────────────────────── -->
+<div id="taller">
   <div class="barra">
     <span class="marca"><span class="zh">学习</span> Panel del equipo</span>
     <span class="quien" id="quien"></span>
