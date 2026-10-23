@@ -182,9 +182,7 @@
         <h2 id="ig-heading">Instagram</h2>
         <button id="ig-actualizar" class="secundario" type="button">Actualizar</button>
       </div>
-      <p class="ig-ayuda">Elige una publicación para crear un evento o rellenar el que
-        estás editando. Reemplaza el título y el detalle; sugiere un identificador
-        si está vacío. Revisa la fecha y sube las fotos antes de publicar.</p>
+      <p class="ig-ayuda">Elige una publicación para importar el texto y las fotos.</p>
       <p id="ig-estado" class="ig-estado" role="status" aria-live="polite"></p>
       <div id="ig-lista" class="ig-lista" aria-label="Últimas publicaciones"></div>
     </aside>
@@ -419,7 +417,7 @@
       if (firebase.auth().currentUser !== user || igPeticion !== peticion) return;
       resultado.data.slice(0, 10).forEach(pintarPublicacion);
       estadoInstagram(resultado.data.length
-        ? 'Haz clic en una miniatura para rellenar el formulario.'
+        ? 'Selecciona una publicación.'
         : 'No hay publicaciones disponibles.');
     } catch(e){
       if (igPeticion !== peticion || firebase.auth().currentUser !== user) return;
@@ -485,6 +483,36 @@
     igLista.appendChild(tarjeta);
   }
 
+  // Decap 3.17.1 envía el resultado de prompt directamente a onChange.
+  // El widget de galería admite una lista: así conserva todas las fotos.
+  // Solo se sustituye prompt durante el clic síncrono y se restaura al salir.
+  function inyectarFotos(etiqueta, fotos, multiple){
+    var d = doc();
+    var label = [].slice.call(d.querySelectorAll('label')).find(function(l){
+      return l.textContent.trim().toLowerCase().indexOf(etiqueta.toLowerCase()) === 0;
+    });
+    if (!label) return false;
+    var contenedor = label.parentElement.parentElement;
+    var botones = [].slice.call(contenedor.querySelectorAll('button'));
+    if (!multiple && !fotos.length){
+      var quitar = botones.find(function(b){ return /eliminar|remove|borrar|quita/i.test(b.textContent); });
+      if (quitar) quitar.click();
+      return true;
+    }
+    var insertar = botones.find(function(b){ return /URL/i.test(b.textContent); });
+    if (!insertar) return false;
+    var ventana = d.defaultView;
+    var promptOriginal = ventana.prompt;
+    var llamado = false;
+    try {
+      ventana.prompt = function(){ llamado = true; return multiple ? fotos : fotos[0]; };
+      insertar.click();
+    } finally {
+      ventana.prompt = promptOriginal;
+    }
+    return llamado;
+  }
+
   async function usarPublicacion(post, boton){
     if (igSeleccionando) return;
     var user = firebase.auth().currentUser;
@@ -511,23 +539,25 @@
         throw new Error('Abre un evento de Agenda para usar esta publicación.');
       }
       var caption = (post.caption || '').trim();
-      var titulo = caption.split(/\r?\n/)[0] || 'Publicación de Instagram';
-      var valores = { 'Título': titulo, 'Detalle': caption };
-      var identificador = campoPorEtiqueta(d, 'Identificador');
-      if (identificador && !identificador.value.trim()){
-        var slug = titulo.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-          .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-          .slice(0, 48).replace(/-$/, '') || 'instagram';
-        valores.Identificador = slug + '-' + String(post.id).replace(/[^0-9]/g, '');
-      }
+      var valores = {
+        'Detalle': caption,
+        'Enlace de Instagram': urlSegura(post.permalink, true)
+      };
       var n = inyectar(valores);
       if (n !== Object.keys(valores).length){
         throw new Error('No se pudieron rellenar todos los campos. Revisa el formulario.');
       }
+      var medios = post.media_type === 'CAROUSEL_ALBUM' ? (post.children?.data || []) : [post];
+      var fotos = medios.filter(function(m){ return m.media_type === 'IMAGE'; })
+        .map(function(m){ return urlSegura(m.media_url); }).filter(Boolean);
+      if (!inyectarFotos('Imagen de portada', fotos.slice(0, 1), false)
+          || !inyectarFotos('Galería de fotos', fotos.slice(1), true)){
+        throw new Error('No se pudieron importar las fotos. Revisa el formulario.');
+      }
       igLista.querySelectorAll('.ig-elegir').forEach(function(b){
         b.setAttribute('aria-pressed', b === boton ? 'true' : 'false');
       });
-      estadoInstagram('Título y detalle rellenados. Revisa la fecha, completa el evento y guarda en el editor.');
+      estadoInstagram('Importado. Completa y guarda el evento.');
     } catch(e){
       estadoInstagram(e.message || 'No se pudo rellenar el evento.', true);
     } finally {

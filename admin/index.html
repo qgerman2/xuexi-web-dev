@@ -131,6 +131,34 @@
     if (texto) decir(texto);
   }
 
+  // El id publicado también nombra el archivo y las fotos: no se renombra.
+  function bloquearIdentificador(){
+    var existente = /^#\/collections\/agenda\/entries\//.test(location.hash);
+    var etiqueta = [].slice.call(document.querySelectorAll('label')).find(function(l){
+      return /^identificador/i.test(l.textContent.trim());
+    });
+    var input = etiqueta && document.getElementById(etiqueta.htmlFor);
+    if (!input) return;
+    input.readOnly = existente;
+    input.setAttribute('aria-readonly', String(existente));
+    var aviso = document.getElementById('aviso-identificador');
+    if (existente && !aviso){
+      aviso = document.createElement('p');
+      aviso.id = 'aviso-identificador';
+      aviso.textContent = 'El identificador no se puede cambiar después de publicar.';
+      aviso.style.cssText = 'font-size:13px;color:#9b342b;margin:8px 0';
+      input.insertAdjacentElement('afterend', aviso);
+    }
+    if (aviso && !existente) aviso.remove();
+    var descritos = (input.getAttribute('aria-describedby') || '').split(/\s+/)
+      .filter(function(id){ return id && id !== 'aviso-identificador'; });
+    if (existente) descritos.push('aviso-identificador');
+    if (descritos.length) input.setAttribute('aria-describedby', descritos.join(' '));
+    else input.removeAttribute('aria-describedby');
+  }
+  new MutationObserver(bloquearIdentificador).observe(document.body, { childList: true, subtree: true });
+  window.addEventListener('hashchange', bloquearIdentificador);
+
   function cargarDecap(){
     if (decapCargado) return;
     decapCargado = true;

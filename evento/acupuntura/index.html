@@ -249,6 +249,9 @@
     var com = COMISIONES[ev.comision];
     var sello = com ? '<span class="ev-com"><span class="zh">' + com.zh + '</span> ' + com.nom + '</span>' : '';
 
+    var enlaceInstagram = /^https:\/\/(www\.)?instagram\.com\//i.test(ev.instagram || '')
+      ? ev.instagram : '';
+
     var mediaPortada = ev.imagen
       ? '<img src="' + esc(ruta(ev.imagen, 'assets/')) + '" alt="' + esc(ev.titulo) + '">'
       : '<span class="glyph zh">' + esc(ev.hanzi || '学') + '</span>';
@@ -276,6 +279,7 @@
         '<div class="ev-info-card">' +
           '<h4><span class="zh">关于</span> Sobre esta actividad</h4>' +
           '<p>' + esc(ev.detalle || 'Actividad organizada por Xuexi Club UC.') + '</p>' +
+          (enlaceInstagram ? '<p><a href="' + esc(enlaceInstagram) + '" target="_blank" rel="noopener noreferrer">Ver en Instagram ↗</a></p>' : '') +
           (esPasado(ev)
             ? '<p style="color:var(--gold);font-size:.84rem;">✨ Este evento ya concluyó. Puedes explorar las fotos de lo que fue la jornada a continuación.</p>'
             : '<a href="https://forms.gle/QGBvhXRK1Yc75obk8" target="_blank" rel="noopener" class="btn btn-sello" style="margin-top:auto;"><span class="zh">报名</span> Inscribirse ahora</a>'

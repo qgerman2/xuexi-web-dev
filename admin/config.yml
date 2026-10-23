@@ -63,10 +63,7 @@ collections:
         name: id
         widget: string
         pattern: ['^[a-z0-9]+(-[a-z0-9]+)*$', 'Solo minúsculas, números y guiones. Ej. taller-caligrafia']
-        hint: >-
-          Es la dirección del evento (/evento/<id>/) y la clave de sus fotos.
-          Córtalo: "cocina-china", no el título entero. NO LO CAMBIES una vez
-          publicado: rompe los enlaces compartidos y deja las fotos huérfanas.
+        hint: 'Es la dirección del evento (/evento/<id>/).'
       - { label: Título, name: titulo, widget: string }
       - label: Fecha
         name: fecha
@@ -87,6 +84,11 @@ collections:
         hint: 'Ej. 18:30'
       - { label: Lugar, name: lugar, widget: string, required: false }
       - { label: Detalle, name: detalle, widget: text, required: false }
+      - label: Enlace de Instagram
+        name: instagram
+        widget: string
+        required: false
+        pattern: ['^https://(www\.)?instagram\.com/.*$', 'Usa un enlace https://www.instagram.com/…']
       - label: Tipo
         name: tipo
         widget: select
