@@ -82,8 +82,22 @@ collections:
         # con un patrón: si no, acaban conviviendo "18:30", "18.30" y "6 PM".
         pattern: ['^([01][0-9]|2[0-3]):[0-5][0-9]$', 'Usa HH:MM de 24 horas. Ej. 18:30']
         hint: 'Ej. 18:30'
+      - label: Hora de término
+        name: horaFin
+        widget: string
+        required: false
+        pattern: ['^([01][0-9]|2[0-3]):[0-5][0-9]$', 'Usa HH:MM de 24 horas. Ej. 11:30']
       - { label: Lugar, name: lugar, widget: string, required: false }
-      - { label: Detalle, name: detalle, widget: text, required: false }
+      - label: Detalle
+        name: detalle
+        widget: text
+        required: false
+        hint: 'Separa los párrafos con una línea en blanco. Puedes ampliar el texto después de la actividad.'
+      - label: Enlace de inscripción
+        name: inscripcion
+        widget: string
+        required: false
+        pattern: ['^https://.+$', 'Usa un enlace que comience con https://']
       - label: Enlace de Instagram
         name: instagram
         widget: string

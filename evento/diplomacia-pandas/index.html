@@ -15,9 +15,7 @@
 .event-breadcrumb a{color:var(--gold)}
 .event-breadcrumb a:hover{text-decoration:underline;text-underline-offset:4px}
 .event-breadcrumb [aria-current]{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65ch}
-.event-heading{position:relative;margin-bottom:30px}
-.event-admin-actions{margin-top:18px}
-.event-admin-actions .btn{font-size:.7rem;padding:9px 14px}
+.event-heading{position:relative;margin:0 auto 30px;max-width:820px}
 .event-tags{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px}
 .event-type{font-size:.67rem;letter-spacing:.15em;text-transform:uppercase;font-weight:600;
   border:1px solid var(--gold-deep);color:var(--gold);padding:4px 11px;border-radius:var(--r)}
@@ -25,58 +23,29 @@
   padding:4px 11px;border:1px solid var(--line);border-radius:var(--r)}
 .event-heading h1{font-family:var(--serif);font-size:clamp(2.2rem,5.2vw,4rem);line-height:1.08;
   max-width:22ch;overflow-wrap:anywhere;text-wrap:balance}
-.event-heading h1 .zh{color:var(--gold);font-size:.75em;margin-left:12px;white-space:nowrap}
-.event-subtitle{margin-top:16px;color:var(--cream-dim);font-size:.85rem;display:flex;gap:10px;flex-wrap:wrap}
-.event-cover{grid-area:cover;align-self:start;margin:0;position:sticky;top:86px;border:1px solid var(--line);
-  border-radius:var(--r);overflow:hidden;background:radial-gradient(ellipse at center,rgba(212,175,97,.08),transparent 70%),var(--ink)}
-.event-cover img{width:100%;height:auto;object-fit:contain}
-.event-cover--empty{height:220px;display:grid;place-items:center;
-  background:radial-gradient(ellipse at 65% 100%,rgba(192,57,43,.3),transparent 70%),var(--ground-2)}
-.event-cover--empty .glyph{font-size:7rem;color:var(--gold);opacity:.35;line-height:1}
-.event-columns{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
-  grid-template-areas:"cover info" "cover participation";gap:24px 32px;align-items:start;margin-bottom:52px}
-.event-columns--wide{grid-template-columns:minmax(0,1fr) 300px;
-  grid-template-areas:"cover cover" "info participation"}
-.event-columns--wide .event-cover{position:relative;top:auto}
-.event-columns--wide .event-cover img{max-height:560px}
-.event-information{grid-area:info}
-.event-participation{grid-area:participation}
-.event-information{min-width:0;border:1px solid var(--line);background:var(--card);border-radius:var(--r);
-  padding:clamp(20px,3vw,32px)}
+.event-meta{display:flex;align-items:center;flex-wrap:wrap;gap:12px 24px;margin-top:22px;
+  font-size:.83rem;color:var(--cream-dim)}
+.event-meta>span{display:inline-flex;align-items:center;gap:8px}
+.event-meta svg{width:17px;height:17px;flex:none;color:var(--gold)}
+.event-actions{display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin-top:24px}
+.event-actions .btn{font-size:.73rem;padding:11px 18px}
+.event-instagram{color:var(--gold);font-size:.8rem;text-underline-offset:4px}
+.event-instagram:hover{text-decoration:underline}
+.event-content{max-width:820px;margin:0 auto 52px}
+.event-cover{position:static;margin:34px auto 44px;max-width:520px;width:100%;
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--ink)}
+.event-cover img{display:block;width:100%;height:auto;object-fit:contain}
+.event-cover--wide{max-width:100%}
+.event-information{padding:0 20px;border:0;background:none}
+.event-description{font-size:1.05rem;line-height:1.95;overflow-wrap:anywhere;color:var(--cream)}
+.event-description p{margin:0 0 1.6em}
+.event-description p:first-child{font-family:var(--serif);font-size:clamp(1.25rem,2.3vw,1.55rem);
+  line-height:1.65;color:var(--cream)}
+.event-description p:last-child{margin-bottom:0}
+.event-credit{font-size:.76rem;color:var(--cream-dim);margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
 .event-section-heading{display:flex;align-items:baseline;gap:12px;font-family:var(--serif);
   font-size:clamp(1.25rem,2.5vw,1.6rem);line-height:1.3;margin:0 0 25px}
 .event-section-heading .zh{color:var(--gold);font-size:.9em;flex:none}
-.event-description{font-size:.95rem;line-height:1.85;color:var(--cream);white-space:pre-line;
-  overflow-wrap:anywhere;margin-bottom:30px}
-.event-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0}
-.event-fact{display:flex;gap:12px;background:rgba(0,0,0,.12);border:1px solid var(--line);
-  padding:16px;border-radius:var(--r);min-width:0}
-.event-fact--wide{grid-column:1/-1}
-.event-fact svg{width:19px;height:19px;flex:none;color:var(--gold);margin-top:3px}
-.event-fact dt,.event-label{font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;color:var(--cream-dim);margin-bottom:5px}
-.event-fact dd{margin:0;font-size:.86rem;line-height:1.5;overflow-wrap:anywhere}
-.event-topic{display:inline-block;border:1px solid var(--line);border-radius:var(--r);padding:5px 12px;
-  color:var(--gold);font-size:.75rem;margin-top:22px}
-.event-participation{border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:var(--r);
-  background:var(--ground-2);overflow:hidden}
-.event-participation-head{padding:24px 24px 20px;border-bottom:1px solid var(--line);
-  background:radial-gradient(ellipse at top right,rgba(212,175,97,.1),transparent 80%)}
-.event-participation-head h2{font-family:var(--serif);font-size:1.45rem;margin-top:5px;line-height:1.2}
-.event-date-stamp{display:flex;align-items:center;gap:16px;margin-top:22px}
-.event-date-day{font-family:var(--serif);font-size:3.4rem;line-height:1;color:var(--gold)}
-.event-date-month{font-size:.75rem;line-height:1.7;color:var(--cream-dim)}
-.event-date-month strong{display:block;color:var(--cream);font-weight:500}
-.event-participation-body{padding:22px 24px}
-.event-summary{margin:0 0 22px}
-.event-summary>div{padding:12px 0;border-bottom:1px solid var(--line)}
-.event-summary>div:first-child{padding-top:0}
-.event-summary dt{font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;color:var(--cream-dim)}
-.event-summary dd{margin:5px 0 0;font-size:.83rem;overflow-wrap:anywhere}
-.event-participation .btn{width:100%;justify-content:center;text-align:center;font-size:.7rem;padding:13px 10px}
-.event-participation-note{font-size:.8rem;color:var(--cream-dim);line-height:1.6;margin-bottom:18px}
-.event-instagram{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--gold);
-  font-size:.77rem;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
-.event-instagram:hover{text-decoration:underline;text-underline-offset:4px}
 .event-page .gallery-section{padding-top:34px;border-top:1px solid var(--line);scroll-margin-top:90px}
 .event-page .gallery-head{margin-bottom:22px}
 .event-page .gallery-head h2{margin:0}
@@ -109,13 +78,6 @@
 .event-related-copy time{font-size:.75rem;color:var(--cream-dim)}
 .event-related-copy>span{margin-top:auto;padding-top:8px;color:var(--gold);font-size:.75rem}
 @media(max-width:820px){
-  .event-columns,.event-columns--wide{grid-template-columns:minmax(0,1fr);grid-template-areas:"cover" "info" "participation";gap:22px}
-  .event-cover{position:relative;top:auto;max-width:560px;width:100%;justify-self:center}
-  .event-participation{position:static}
-  .event-participation-head{display:flex;justify-content:space-between;align-items:center;gap:20px}
-  .event-date-stamp{margin-top:0}
-  .event-summary{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
-  .event-summary>div:first-child{padding-top:12px}
   .event-related-grid{gap:12px}
   .event-related-media{height:135px}
   .event-related-copy{padding:14px}
@@ -124,14 +86,10 @@
   .event-breadcrumb{margin-bottom:22px;font-size:.65rem}
   .event-breadcrumb [aria-current]{max-width:30ch}
   .event-heading h1{font-size:2.2rem}
-  .event-cover img{height:auto}
-  .event-facts{grid-template-columns:minmax(0,1fr)}
-  .event-fact--wide{grid-column:auto}
-  .event-participation-head{padding:20px;gap:10px}
-  .event-participation-body{padding:20px}
-  .event-date-day{font-size:2.7rem}
-  .event-date-stamp{gap:10px;flex:none}
-  .event-summary{grid-template-columns:minmax(0,1fr)}
+  .event-information{padding:0}
+  .event-description{font-size:1rem;line-height:1.85}
+  .event-cover{margin:26px auto 32px}
+  .event-meta{gap:10px 18px;font-size:.77rem}
   .event-page .ev-stage-screen{aspect-ratio:4/3}
   .event-page .ev-stage-caption{padding:30px 14px 12px;gap:6px}
   .event-page .ev-stage-info h4{font-size:.85rem}
@@ -270,7 +228,7 @@
     abierto  :{txt:'Inscripción abierta', cls:'e-abierto'},
     pronto   :{txt:'Próximamente',        cls:'e-pronto'},
     lleno    :{txt:'Cupos llenos',        cls:'e-lleno'},
-    online   :{txt:'Online · abierto',    cls:'e-online'},
+    online   :{txt:'Inscripción abierta', cls:'e-online'},
     realizado:{txt:'Realizado',           cls:'e-lleno'}
   };
   var TIPOS = {
@@ -409,8 +367,7 @@
       : 'Por confirmar';
     var pasado = esPasado(ev) || ev.estado === 'realizado';
     var inscripcionAbierta = !pasado && (ev.estado === 'abierto' || ev.estado === 'online');
-    var organizador = com ? 'Comisión ' + com.nom + ' · ' + com.zh : 'Xuexi Club UC';
-    var paginaEvento = 'evento/' + encodeURIComponent(ev.id) + '/';
+    var organizador = com ? 'Xuexi Club UC · Comisión ' + com.nom : 'Xuexi Club UC';
     var enlaceInstagram = /^https:\/\/(www\.)?instagram\.com\//i.test(ev.instagram || '')
       ? ev.instagram : '';
 
@@ -418,27 +375,22 @@
       return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + trazos + '</svg>';
     }
     var RELOJ = icono('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>');
-    var PERSONAS = icono('<circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M21 21v-3a6 6 0 0 0-3-5"/>');
-    var ORGANIZA = icono('<path d="m3 9 9-6 9 6H3ZM5 10v9M10 10v9M14 10v9M19 10v9M3 21h18"/>');
-    var ESTADO = icono('<rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 4V2M15 4V2m-7 11 3 3 5-6"/>');
-    function dato(etiqueta, valor, dibujo, ancho){
-      return '<div class="event-fact' + (ancho ? ' event-fact--wide' : '') + '">' + dibujo +
-        '<div><dt>' + esc(etiqueta) + '</dt><dd>' + esc(valor) + '</dd></div></div>';
-    }
-    function resumen(etiqueta, valor){
-      return '<div><dt>' + esc(etiqueta) + '</dt><dd>' + esc(valor) + '</dd></div>';
-    }
-
     var mediaPortada = ev.imagen
       ? '<img src="' + esc(ruta(ev.imagen, 'assets/')) + '" alt="' + esc(ev.titulo) + '" fetchpriority="high">'
       : '<span class="glyph zh" aria-hidden="true">' + esc(ev.hanzi || '学') + '</span>';
-    var notaParticipacion = pasado
-      ? 'Esta actividad ya finalizó. Revisa las fotografías del encuentro.'
-      : ev.estado === 'lleno' ? 'Los cupos para esta actividad están completos.'
-      : !inscripcionAbierta ? 'La inscripción se anunciará próximamente.' : '';
-    var accion = inscripcionAbierta
-      ? '<a href="https://forms.gle/QGBvhXRK1Yc75obk8" target="_blank" rel="noopener noreferrer" class="btn btn-sello"><span class="zh" aria-hidden="true">报名</span> Inscribirme <span aria-hidden="true">↗</span></a>'
-      : pasado ? '<a href="' + esc(paginaEvento) + '#fotos-evento" class="btn btn-gold">Ver fotografías <span aria-hidden="true">↓</span></a>' : '';
+    var inscripcion = '';
+    try {
+      var urlInscripcion = new URL(ev.inscripcion || 'https://forms.gle/QGBvhXRK1Yc75obk8');
+      if (urlInscripcion.protocol === 'https:') inscripcion = urlInscripcion.href;
+    } catch(e){}
+    var accion = inscripcionAbierta && inscripcion
+      ? '<a href="' + esc(inscripcion) + '" target="_blank" rel="noopener noreferrer" class="btn btn-sello">Inscribirme <span aria-hidden="true">↗</span></a>' : '';
+    var horario = ev.hora ? ev.hora + (ev.horaFin ? '–' + ev.horaFin : '') + ' hrs.' : 'Horario por confirmar';
+    var lugar = ev.lugar || (ev.estado === 'online' ? 'En línea' : 'Lugar por confirmar');
+    var parrafos = String(ev.detalle || 'Actividad organizada por Xuexi Club UC.').trim()
+      .split(/\n\s*\n/).filter(Boolean).map(function(p){
+        return '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>';
+      }).join('');
 
     var relacionados = evs.filter(function(otro){ return otro.id && otro.id !== ev.id; })
       .sort(function(a, b){
@@ -466,45 +418,27 @@
         }).join('') + '</div></section>' : '';
 
     var html = '' +
-      '<nav class="event-breadcrumb" aria-label="Ruta de navegación">' +
-        '<a href="index.html">Inicio</a><span aria-hidden="true">/</span>' +
-        '<a href="eventos.html">Agenda</a><span aria-hidden="true">/</span>' +
-        '<span aria-current="page">' + esc(ev.titulo) + '</span>' +
-      '</nav>' +
+      '<nav class="event-breadcrumb" aria-label="Ruta de navegación"><a href="eventos.html">← Agenda</a></nav>' +
       '<header class="event-heading">' +
         '<div class="event-tags"><span class="event-type">' + esc(TIPOS[ev.tipo] || 'Actividad') + '</span>' +
           '<span class="estado ' + est.cls + '">' + esc(est.txt) + '</span></div>' +
-        '<h1>' + esc(ev.titulo) + (ev.hanzi ? '<span class="zh" aria-hidden="true">' + esc(ev.hanzi) + '</span>' : '') + '</h1>' +
-        '<p class="event-subtitle">Xuexi Club UC' + (com ? '<span aria-hidden="true">·</span> Comisión ' + esc(com.nom) : '') + '</p>' +
-        '<div class="event-admin-actions"><a class="btn btn-gold" id="editar-evento" href="admin.html?evento=' + esc(encodeURIComponent(ev.id)) + '" hidden>Editar evento <span aria-hidden="true">↗</span></a></div>' +
+        '<h1>' + esc(ev.titulo) + '</h1>' +
+        '<div class="event-meta">' +
+          '<span>' + CAL + (fechaConfirmada ? '<time datetime="' + esc(ev.fecha) + '">' + esc(fechaTexto) + '</time>' : 'Fecha por confirmar') + '</span>' +
+          '<span>' + RELOJ + esc(horario) + '</span><span>' + PIN + esc(lugar) + '</span>' +
+          (ev.cupos > 0 ? '<span>Capacidad: ' + esc(ev.cupos) + ' participantes</span>' : '') +
+        '</div>' +
+        '<div class="event-actions">' + accion +
+          (enlaceInstagram ? '<a class="event-instagram" href="' + esc(enlaceInstagram) + '" target="_blank" rel="noopener noreferrer">Ver en Instagram <span aria-hidden="true">↗</span></a>' : '') +
+          '<a class="btn btn-gold" id="editar-evento" href="admin.html?evento=' + esc(encodeURIComponent(ev.id)) + '" hidden>Editar evento <span aria-hidden="true">↗</span></a>' +
+        '</div>' +
       '</header>' +
-      '<div class="event-columns' + (!ev.imagen ? ' event-columns--wide' : '') + '">' +
-      '<figure class="event-cover' + (!ev.imagen ? ' event-cover--empty' : '') + '">' + mediaPortada + '</figure>' +
-        '<article class="event-information" aria-labelledby="informacion-actividad">' +
-          '<h2 class="event-section-heading" id="informacion-actividad"><span class="zh" aria-hidden="true">关于</span> Información de la actividad</h2>' +
-          '<p class="event-description">' + esc(ev.detalle || 'Actividad organizada por Xuexi Club UC.') + '</p>' +
-          '<dl class="event-facts">' +
-            dato('Fecha', fechaTexto, CAL) + dato('Horario', ev.hora ? ev.hora + ' hrs.' : 'Por confirmar', RELOJ) +
-            dato('Lugar', ev.lugar || (ev.estado === 'online' ? 'En línea' : 'Por confirmar'), PIN, true) +
-            dato('Disponibilidad', est.txt, ESTADO) + dato('Organiza', organizador, ORGANIZA) +
-            (ev.cupos > 0 ? dato('Capacidad', ev.cupos + ' participantes', PERSONAS, true) : '') +
-          '</dl>' +
-          (ev.areaEtiqueta ? '<span class="event-topic">' + esc(ev.areaEtiqueta) + '</span>' : '') +
+      '<div class="event-content">' +
+        (ev.imagen ? '<figure class="event-cover">' + mediaPortada + '</figure>' : '') +
+        '<article class="event-information" aria-label="Descripción de la actividad">' +
+          '<div class="event-description">' + parrafos + '</div>' +
+          '<p class="event-credit">' + esc(organizador) + '</p>' +
         '</article>' +
-        '<aside class="event-participation" aria-labelledby="participacion-titulo">' +
-          '<div class="event-participation-head"><div><p class="event-label">' + (pasado ? 'Así nos encontramos' : 'Sé parte del encuentro') + '</p>' +
-            '<h2 id="participacion-titulo">' + (pasado ? 'Actividad realizada' : 'Participa en esta actividad') + '</h2></div>' +
-            (fechaConfirmada ? '<div class="event-date-stamp"><span class="event-date-day">' + d.getDate() + '</span>' +
-              '<div class="event-date-month"><strong>' + MESES[d.getMonth()] + '</strong>' + d.getFullYear() + '</div></div>' : '') +
-          '</div>' +
-          '<div class="event-participation-body"><dl class="event-summary">' +
-            resumen('Horario', ev.hora ? ev.hora + ' hrs.' : 'Por confirmar') +
-            resumen('Lugar', ev.lugar || (ev.estado === 'online' ? 'En línea' : 'Por confirmar')) +
-            resumen('Disponibilidad', est.txt) + '</dl>' +
-            (notaParticipacion ? '<p class="event-participation-note">' + esc(notaParticipacion) + '</p>' : '') + accion +
-            (enlaceInstagram ? '<a class="event-instagram" href="' + esc(enlaceInstagram) + '" target="_blank" rel="noopener noreferrer">Ver en Instagram <span aria-hidden="true">↗</span></a>' : '') +
-          '</div>' +
-        '</aside>' +
       '</div>' +
 
       '<div class="gallery-section" id="fotos-evento">' +
@@ -540,7 +474,7 @@
     if (portada){
       var ajustarFormato = function(){
         if (portada.naturalWidth && portada.naturalHeight){
-          contenedor.querySelector('.event-columns').classList.toggle('event-columns--wide',
+          portada.parentElement.classList.toggle('event-cover--wide',
             portada.naturalWidth / portada.naturalHeight > 1.4);
         }
       };
@@ -566,7 +500,8 @@
       stageImg.src = item.url;
       stageImg.alt = item.caption;
       stageCount.textContent = 'FOTOGRAFÍA ' + (currentStageIdx + 1) + ' DE ' + galeriaFotos.length;
-      stageTitle.textContent = item.caption || ev.titulo;
+      stageTitle.textContent = item.esDinamica ? item.caption : '';
+      stageTitle.hidden = !stageTitle.textContent;
 
       [].forEach.call(thumbsTrack.querySelectorAll('.ev-thumb-item'), function(thumb, i){
         thumb.classList.toggle('active', i === currentStageIdx);
@@ -592,9 +527,8 @@
       if (ev.galeria && Array.isArray(ev.galeria) && ev.galeria.length > 0){
         fotosBase = ev.galeria.map(comoArchivo).filter(Boolean);
       }
-      if (!fotosBase.length && ev.imagen){
-        fotosBase = [ev.imagen];
-      }
+      // La portada ya aparece arriba: no se repite como fotografía de la galería.
+      fotosBase = fotosBase.filter(function(f){ return f !== ev.imagen; });
 
       var listaInicial = fotosBase.map(function(f, idx){
         return {
@@ -631,6 +565,7 @@
 
     function renderGaleria(){
       var hayFotos = galeriaFotos.length > 0;
+      document.getElementById('fotos-evento').hidden = !hayFotos && !(usuarioActual && usuarioActual.rol === 'admin');
       document.getElementById('ev-stage-box').hidden = !hayFotos;
       document.getElementById('fotos-vacio').hidden = hayFotos;
       thumbsTrack.hidden = galeriaFotos.length < 2;
