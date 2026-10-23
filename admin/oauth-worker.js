@@ -21,7 +21,10 @@ const GITHUB_TOKEN = 'https://github.com/login/oauth/access_token';
 const ORIGENES_PERMITIDOS = [
   'https://xuexiclub.cl',
   'https://www.xuexiclub.cl',
-  'https://xuexi-club-uc.github.io'
+  'https://xuexi-club-uc.github.io',
+  // Copia de desarrollo (qgerman2/xuexi-web-dev en GitHub Pages). El origen no
+  // lleva la ruta del proyecto: postMessage compara esquema, host y puerto.
+  'https://qgerman2.github.io'
 ];
 
 function paginaRespuesta(mensaje, origenes) {

@@ -6,9 +6,9 @@
 
 backend:
   name: github
-  repo: xuexi-club-uc/xuexi-web
+  repo: qgerman2/xuexi-web-dev
   branch: main
-  base_url: https://xuexi-panel.xuexiclub.workers.dev
+  base_url: https://test.qgerman2.workers.dev
   auth_scope: public_repo
   commit_messages:
     update: 'Actualiza {{collection}} desde el panel ({{author-login}})'

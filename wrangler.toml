@@ -1,23 +1,31 @@
-# Configuración del conector de acceso del panel de edición.
+# Configuración del conector de acceso del panel de edición · COPIA DE DESARROLLO
 #
 # Esto NO es parte del sitio web: define el pequeño servicio que se instala en
-# Cloudflare Workers y que verifica con GitHub quién entra a xuexiclub.cl/admin/
+# Cloudflare Workers y que verifica con GitHub quién entra al panel.
 #
-# Para volver a desplegarlo:  npx wrangler deploy
+# OJO: este es el conector de PRUEBAS, no el del club. El del club vive en el
+# repositorio xuexi-club-uc/xuexi-web y se llama "xuexi-panel". Si este archivo
+# vuelve a llevar ese nombre y esa cuenta, un `wrangler deploy` desde aquí pisa
+# el conector de producción.
+#
+# Para desplegarlo:  npx wrangler deploy
 # El código está en admin/oauth-worker.js
 
-name = "xuexi-panel"
+name = "test"
 main = "admin/oauth-worker.js"
 compatibility_date = "2026-08-01"
 
-# Cuenta del club, no la personal: así el conector no depende de que una
-# persona siga en la organización. No es un dato secreto.
-account_id = "d13c3276a03fc7a37985e2e4a1ea17c6"
+# Cuenta personal de Cloudflare (la de qgerman2), no la del club. Se saca del
+# panel de Cloudflare > Workers & Pages > cualquier worker > Account ID.
+# Mientras diga FALTA_, `wrangler deploy` falla en vez de desplegar en la
+# cuenta equivocada.
+account_id = "FALTA_ACCOUNT_ID"
 
-# El Client ID de la aplicación de GitHub es público (aparece en cada enlace
-# de acceso), así que puede vivir aquí.
+# Client ID de la aplicación OAuth de GitHub que respalda este conector de
+# pruebas. Es público (aparece en cada enlace de acceso), así que puede vivir
+# aquí. Su callback debe ser https://test.qgerman2.workers.dev/callback
 [vars]
-GITHUB_CLIENT_ID = "Ov23livN6TNZrSzPnvXq"
+GITHUB_CLIENT_ID = "FALTA_GITHUB_CLIENT_ID"
 
 # El Client Secret NO va aquí. Se guarda aparte, fuera del repositorio, con:
 #   npx wrangler secret put GITHUB_CLIENT_SECRET
