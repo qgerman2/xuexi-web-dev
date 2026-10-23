@@ -53,6 +53,39 @@
   .barra .hueco{margin-left:auto;display:flex;gap:8px;align-items:center}
   .barra button{padding:7px 13px;font-size:.78rem}
 
+  /* Editor y publicaciones de Instagram. */
+  .espacio-editor{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:18px;
+                  align-items:start}
+  .instagram{padding:16px;border:1px solid var(--linea);border-radius:10px;
+             background:var(--panel);max-height:calc(100vh - 220px);overflow:auto}
+  .instagram h2{margin:0;font-size:1rem}
+  .ig-cabecera{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .ig-cabecera button{padding:6px 9px;font-size:.72rem}
+  .ig-ayuda,.ig-estado{font-size:.78rem;line-height:1.5;color:var(--crema);opacity:.8}
+  .ig-estado[data-error="true"]{color:#ffb4a9;opacity:1}
+  .ig-lista{display:grid;gap:14px}
+  .ig-publicacion{min-width:0}
+  .ig-elegir{display:block;width:100%;padding:0;overflow:hidden;text-align:left;
+             background:var(--fondo);border:2px solid transparent;color:var(--crema)}
+  .ig-elegir:hover,.ig-elegir[aria-pressed="true"]{border-color:var(--oro)}
+  .ig-elegir:focus-visible{outline:2px solid var(--oro);outline-offset:3px}
+  .ig-imagen{display:grid;place-items:center;aspect-ratio:1;background:#382626;
+             overflow:hidden;font-size:.8rem}
+  .ig-imagen img{width:100%;height:100%;object-fit:cover;grid-area:1/1}
+  .ig-imagen span{grid-area:1/1}
+  .ig-titulo{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+             overflow:hidden;margin:10px;font-size:.82rem;line-height:1.4;
+             overflow-wrap:anywhere}
+  .ig-pie{display:flex;justify-content:space-between;gap:8px;margin-top:5px;
+          font-size:.7rem;opacity:.8}
+  .ig-pie a{color:var(--oro)}
+  @media(max-width:1050px){
+    .espacio-editor{grid-template-columns:minmax(0,1fr)}
+    .instagram{max-height:none;grid-row:1}
+    .ig-lista{display:flex;overflow-x:auto;padding:4px;gap:12px}
+    .ig-publicacion{flex:0 0 150px}
+  }
+
   /* El editor, con aire alrededor en vez de pegado a los bordes. */
   .marco{padding:clamp(12px,2.2vw,26px) clamp(14px,5vw,56px) clamp(18px,3vw,34px)}
   #cms{display:block;width:100%;height:calc(100vh - 220px);min-height:520px;
@@ -139,14 +172,22 @@
     <span class="marca"><span class="zh">学习</span> Panel del equipo</span>
     <span class="quien" id="quien"></span>
     <span class="hueco">
-      <!-- Aquí va el panel de Instagram cuando exista: un campo para pegar el
-           enlace de la publicación, que llama al Worker y rellena el
-           formulario de Decap con inyectar(). -->
       <button id="salir" class="secundario" type="button">Salir</button>
     </span>
   </div>
-  <div class="marco">
+  <div class="marco espacio-editor">
     <iframe id="cms" title="Editor de contenidos"></iframe>
+    <aside class="instagram" aria-labelledby="ig-heading">
+      <div class="ig-cabecera">
+        <h2 id="ig-heading">Instagram</h2>
+        <button id="ig-actualizar" class="secundario" type="button">Actualizar</button>
+      </div>
+      <p class="ig-ayuda">Elige una publicación para crear un evento o rellenar el que
+        estás editando. Reemplaza el título y el detalle; sugiere un identificador
+        si está vacío. Revisa la fecha y sube las fotos antes de publicar.</p>
+      <p id="ig-estado" class="ig-estado" role="status" aria-live="polite"></p>
+      <div id="ig-lista" class="ig-lista" aria-label="Últimas publicaciones"></div>
+    </aside>
   </div>
 </div>
 
@@ -173,6 +214,12 @@
 
   var ROL_REQUERIDO = 'admin';
   var EDITOR = 'admin/';
+  var INSTAGRAM = 'https://ig.qgerman2.workers.dev/instagram/posts';
+  var igPeticion = null;
+  var igSeleccionando = false;
+  var igEstado = document.getElementById('ig-estado');
+  var igLista = document.getElementById('ig-lista');
+  var igActualizar = document.getElementById('ig-actualizar');
 
   var puerta = document.getElementById('puerta'),
       taller = document.getElementById('taller'),
@@ -204,6 +251,7 @@
     taller.classList.add('visible');
     // /admin/ se encarga de sembrar la sesión y cargar Decap.
     if (!marco.src) marco.src = EDITOR;
+    cargarInstagram(user);
   }
 
   if (typeof firebase === 'undefined' || !firebase.apps.length){
@@ -213,6 +261,12 @@
   }
 
   firebase.auth().onAuthStateChanged(function(user){
+    // Retira el contenido de la sesión anterior antes de comprobar la nueva.
+    if (igPeticion) igPeticion.abort();
+    igLista.replaceChildren();
+    taller.classList.remove('visible');
+    puerta.classList.remove('oculto');
+    marco.removeAttribute('src');
     if (!user){ pedirCredenciales(); return; }
 
     sub.textContent = 'Comprobando permisos…';
@@ -220,6 +274,7 @@
 
     firebase.firestore().collection('miembros').doc(user.uid).get()
       .then(function(doc){
+        if (firebase.auth().currentUser !== user) return;
         var perfil = doc.exists ? doc.data() : null;
         if (!perfil || perfil.rol !== ROL_REQUERIDO){
           sub.textContent = '';
@@ -287,12 +342,16 @@
 
   function escribir(el, valor){
     if (!el) return false;
-    var proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype
-              : el instanceof HTMLSelectElement   ? HTMLSelectElement.prototype
-              :                                     HTMLInputElement.prototype;
+    // Los elementos pertenecen al iframe, que tiene sus propios constructores.
+    var ventana = el.ownerDocument.defaultView;
+    var proto = el instanceof ventana.HTMLTextAreaElement ? ventana.HTMLTextAreaElement.prototype
+              : el instanceof ventana.HTMLSelectElement   ? ventana.HTMLSelectElement.prototype
+              : el instanceof ventana.HTMLInputElement    ? ventana.HTMLInputElement.prototype
+              : null;
+    if (!proto || el.disabled || el.readOnly) return false;
     Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, valor);
-    el.dispatchEvent(new Event('input',  { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new ventana.Event('input',  { bubbles: true }));
+    el.dispatchEvent(new ventana.Event('change', { bubbles: true }));
     return true;
   }
 
@@ -322,7 +381,167 @@
     });
   }
 
-  // Lo dejamos a mano para el panel de Instagram y para probar desde la consola.
+  // ─────────────────── Publicaciones de Instagram ───────────────────
+
+  function estadoInstagram(texto, error){
+    igEstado.textContent = texto;
+    igEstado.dataset.error = error ? 'true' : 'false';
+  }
+
+  function urlSegura(valor, instagram){
+    try {
+      var u = new URL(valor);
+      if (u.protocol !== 'https:') return '';
+      if (instagram && !/^(www\.)?instagram\.com$/.test(u.hostname)) return '';
+      return u.href;
+    } catch(e){ return ''; }
+  }
+
+  async function cargarInstagram(user){
+    if (igPeticion) igPeticion.abort();
+    var peticion = new AbortController();
+    igPeticion = peticion;
+    var reloj = setTimeout(function(){ peticion.abort(); }, 25000);
+    igActualizar.disabled = true;
+    igLista.replaceChildren();
+    estadoInstagram('Cargando publicaciones…');
+    try {
+      var token = await user.getIdToken();
+      if (peticion.signal.aborted) return;
+      var r = await fetch(INSTAGRAM, {
+        headers: { Authorization: 'Bearer ' + token },
+        cache: 'no-store',
+        signal: peticion.signal
+      });
+      var resultado = await r.json();
+      if (!r.ok) throw new Error(resultado.error || 'No se pudo cargar Instagram.');
+      if (!Array.isArray(resultado.data)) throw new Error('Respuesta inesperada de Instagram.');
+      if (firebase.auth().currentUser !== user || igPeticion !== peticion) return;
+      resultado.data.slice(0, 10).forEach(pintarPublicacion);
+      estadoInstagram(resultado.data.length
+        ? 'Haz clic en una miniatura para rellenar el formulario.'
+        : 'No hay publicaciones disponibles.');
+    } catch(e){
+      if (igPeticion !== peticion || firebase.auth().currentUser !== user) return;
+      estadoInstagram(e.name === 'AbortError'
+        ? 'Instagram tardó demasiado. Pulsa Actualizar para reintentar.'
+        : (e.message || 'No se pudo cargar Instagram.'), true);
+    } finally {
+      clearTimeout(reloj);
+      if (igPeticion === peticion) igActualizar.disabled = false;
+    }
+  }
+
+  function pintarPublicacion(post){
+    var titulo = (post.caption || '').trim().split(/\r?\n/)[0] || 'Publicación de Instagram';
+    var tarjeta = document.createElement('article');
+    tarjeta.className = 'ig-publicacion';
+    var elegir = document.createElement('button');
+    elegir.type = 'button';
+    elegir.className = 'ig-elegir';
+    elegir.setAttribute('aria-pressed', 'false');
+    elegir.setAttribute('aria-label', 'Usar publicación: ' + titulo);
+    var foto = document.createElement('div');
+    foto.className = 'ig-imagen';
+    var sinFoto = document.createElement('span');
+    sinFoto.textContent = 'Sin miniatura';
+    foto.appendChild(sinFoto);
+    var medio = post.media_type === 'CAROUSEL_ALBUM' ? post.children?.data?.[0] : post;
+    var imagen = urlSegura(medio?.thumbnail_url || (medio?.media_type !== 'VIDEO' && medio?.media_url));
+    if (imagen){
+      var img = document.createElement('img');
+      img.alt = '';
+      img.loading = 'lazy';
+      img.referrerPolicy = 'no-referrer';
+      img.src = imagen;
+      img.addEventListener('error', function(){ img.remove(); });
+      foto.appendChild(img);
+    }
+    var texto = document.createElement('span');
+    texto.className = 'ig-titulo';
+    texto.textContent = titulo;
+    elegir.append(foto, texto);
+    elegir.addEventListener('click', function(){ usarPublicacion(post, elegir); });
+    tarjeta.appendChild(elegir);
+    var pie = document.createElement('div');
+    pie.className = 'ig-pie';
+    var fecha = new Date(post.timestamp);
+    if (!isNaN(fecha.getTime())){
+      var tiempo = document.createElement('time');
+      tiempo.dateTime = fecha.toISOString();
+      tiempo.textContent = fecha.toLocaleDateString('es-CL', { timeZone: 'America/Santiago' });
+      pie.appendChild(tiempo);
+    }
+    var enlace = urlSegura(post.permalink, true);
+    if (enlace){
+      var ver = document.createElement('a');
+      ver.href = enlace;
+      ver.target = '_blank';
+      ver.rel = 'noopener noreferrer';
+      ver.textContent = 'Ver publicación ↗';
+      pie.appendChild(ver);
+    }
+    tarjeta.appendChild(pie);
+    igLista.appendChild(tarjeta);
+  }
+
+  async function usarPublicacion(post, boton){
+    if (igSeleccionando) return;
+    var user = firebase.auth().currentUser;
+    var d = doc();
+    if (!user || !d){
+      estadoInstagram('Espera a que termine de cargar el editor.', true);
+      return;
+    }
+    var ruta = d.defaultView.location.hash;
+    var esAgenda = /^#\/collections\/agenda\/(new|entries\/[^/]+)\/?$/.test(ruta);
+    if (!esAgenda && /\/(entries|new)(\/|$)/.test(ruta)){
+      estadoInstagram('Abre un evento de Agenda para usar esta publicación.', true);
+      return;
+    }
+    igSeleccionando = true;
+    boton.disabled = true;
+    estadoInstagram('Rellenando el evento…');
+    try {
+      if (!esAgenda) d.defaultView.location.hash = '/collections/agenda/new';
+      await cuandoHayaFormulario('Detalle', 25000);
+      if (firebase.auth().currentUser !== user || !boton.isConnected) return;
+      d = doc();
+      if (!/^#\/collections\/agenda\/(new|entries\/[^/]+)\/?$/.test(d.defaultView.location.hash)){
+        throw new Error('Abre un evento de Agenda para usar esta publicación.');
+      }
+      var caption = (post.caption || '').trim();
+      var titulo = caption.split(/\r?\n/)[0] || 'Publicación de Instagram';
+      var valores = { 'Título': titulo, 'Detalle': caption };
+      var identificador = campoPorEtiqueta(d, 'Identificador');
+      if (identificador && !identificador.value.trim()){
+        var slug = titulo.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+          .slice(0, 48).replace(/-$/, '') || 'instagram';
+        valores.Identificador = slug + '-' + String(post.id).replace(/[^0-9]/g, '');
+      }
+      var n = inyectar(valores);
+      if (n !== Object.keys(valores).length){
+        throw new Error('No se pudieron rellenar todos los campos. Revisa el formulario.');
+      }
+      igLista.querySelectorAll('.ig-elegir').forEach(function(b){
+        b.setAttribute('aria-pressed', b === boton ? 'true' : 'false');
+      });
+      estadoInstagram('Título y detalle rellenados. Revisa la fecha, completa el evento y guarda en el editor.');
+    } catch(e){
+      estadoInstagram(e.message || 'No se pudo rellenar el evento.', true);
+    } finally {
+      igSeleccionando = false;
+      boton.disabled = false;
+    }
+  }
+
+  igActualizar.addEventListener('click', function(){
+    var user = firebase.auth().currentUser;
+    if (user) cargarInstagram(user);
+  });
+
+  // También disponible para probar desde la consola.
   window.PanelXuexi = {
     inyectar: inyectar,
     cuandoHayaFormulario: cuandoHayaFormulario,
