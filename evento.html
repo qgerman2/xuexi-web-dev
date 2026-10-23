@@ -204,11 +204,11 @@
     if (e.key === 'ArrowRight') abrirLightbox((lightboxIndex + 1) % galeriaFotos.length);
   });
 
-  var params = new URLSearchParams(window.location.search);
-  // Las páginas de /evento/<id>/ traen el identificador puesto en el HTML
-  // (lo genera tools/generar-paginas-evento.py). Si no, se usa ?id=, que
-  // sigue funcionando para los enlaces antiguos.
-  var targetId = window.EVENTO_ID || params.get('id') || '';
+  // Este archivo es la PLANTILLA de /evento/<id>/index.html: no se visita
+  // directamente. tools/generar-paginas-evento.py le añade EVENTO_ID a cada
+  // copia. Sin él no hay nada que mostrar, así que volvemos a la agenda.
+  var targetId = window.EVENTO_ID || '';
+  if (!targetId) { window.location.replace('eventos.html'); return; }
   var contenedor = document.getElementById('contenedor-evento');
 
   window.cargarEventos().then(function(data){
@@ -218,10 +218,6 @@
              (encodeURIComponent(e.id || e.titulo) === targetId) ||
              (e.titulo && e.titulo.toLowerCase() === decodeURIComponent(targetId).toLowerCase());
     });
-
-    if (!ev && evs.length > 0){
-      ev = evs[0];
-    }
 
     if (!ev){
       contenedor.innerHTML = '<div class="aviso">' +

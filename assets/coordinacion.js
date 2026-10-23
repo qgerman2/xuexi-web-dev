@@ -626,7 +626,7 @@
         alert('Por favor selecciona una actividad de la lista.');
         return;
       }
-      window.location.href = 'evento.html?id=' + encodeURIComponent(evId);
+      window.location.href = 'evento/' + encodeURIComponent(evId) + '/';
     });
 
     listarCodigos();

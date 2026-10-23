@@ -1,0 +1,63 @@
+# Reconstruye la agenda cuando cambia un evento · Xuexi Club UC
+#
+# El panel guarda un archivo por evento en data/eventos/. De ahí salen dos
+# cosas que el sitio necesita y que nadie debería escribir a mano:
+#
+#   data/eventos.json     la lista entera, que es lo que lee el sitio de una
+#                         sola vez (un sitio estático no puede listar carpetas)
+#   evento/<id>/          una página por evento, con sus etiquetas Open Graph,
+#                         para que al compartir el enlace salga la foto y el
+#                         título y no una vista previa genérica
+#
+# Se dispara solo con los archivos de entrada. Lo que genera (data/eventos.json
+# y evento/) queda FUERA de 'paths' a propósito: si no, su propio commit la
+# volvería a disparar en bucle.
+
+name: Agenda
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/eventos/**'
+      - 'evento.html'
+      - 'tools/agregar-eventos.py'
+      - 'tools/generar-paginas-evento.py'
+  workflow_dispatch:        # por si hay que forzarla a mano
+
+permissions:
+  contents: write
+
+# Dos guardados seguidos en el panel no deben pisarse entre sí.
+concurrency:
+  group: agenda
+  cancel-in-progress: false
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    env:
+      # Las etiquetas og: tienen que ser absolutas: los rastreadores no
+      # resuelven rutas relativas. Cambiar al mover el sitio de dominio.
+      XUEXI_SITIO: https://qgerman2.github.io/xuexi-web-dev
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Juntar los eventos en data/eventos.json
+        run: python3 tools/agregar-eventos.py
+
+      - name: Generar las páginas de cada evento
+        run: python3 tools/generar-paginas-evento.py
+
+      - name: Guardar si algo cambió
+        run: |
+          if git diff --quiet -- data/eventos.json evento/; then
+            echo "Nada que guardar."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/eventos.json evento/
+          git commit -m "Reconstruye la agenda desde data/eventos/"
+          git push

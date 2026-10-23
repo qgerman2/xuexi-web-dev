@@ -24,86 +24,108 @@ public_folder: assets
 
 collections:
   # ─────────────────────────── EVENTOS ───────────────────────────
+  # Un archivo por evento en data/eventos/. El nombre del archivo es el id,
+  # que es la URL pública (/evento/<id>/) y la clave con la que se guardan sus
+  # fotos. Al guardar, una GitHub Action junta todo en data/eventos.json y
+  # vuelve a generar las páginas: ese archivo NO se edita desde aquí.
   - name: agenda
     label: Agenda
+    label_singular: evento
+    folder: data/eventos
+    create: true
+    extension: json
+    format: json
+    identifier_field: titulo
+    slug: '{{fields.id}}'
+    summary: '{{fecha}} · {{titulo}}'
+    sortable_fields: [fecha, titulo, tipo]
+    description: >-
+      Actividades del club. Los eventos con fecha pasada se mueven solos a
+      "Eventos anteriores": no hay que borrarlos.
+    fields:
+      - label: Identificador
+        name: id
+        widget: string
+        pattern: ['^[a-z0-9]+(-[a-z0-9]+)*$', 'Solo minúsculas, números y guiones. Ej. taller-caligrafia']
+        hint: >-
+          Es la dirección del evento (/evento/<id>/) y la clave de sus fotos.
+          Córtalo: "cocina-china", no el título entero. NO LO CAMBIES una vez
+          publicado: rompe los enlaces compartidos y deja las fotos huérfanas.
+      - { label: Título, name: titulo, widget: string }
+      - label: Fecha
+        name: fecha
+        widget: datetime
+        format: 'YYYY-MM-DD'
+        date_format: 'DD-MM-YYYY'
+        time_format: false
+        picker_utc: true
+      - { label: Hora, name: hora, widget: string, required: false, hint: 'Ej. 18:30' }
+      - { label: Lugar, name: lugar, widget: string, required: false }
+      - { label: Detalle, name: detalle, widget: text, required: false }
+      - label: Tipo
+        name: tipo
+        widget: select
+        options:
+          - { label: Taller, value: taller }
+          - { label: Charla, value: charla }
+          - { label: Congreso, value: congreso }
+          - { label: Almuerzo, value: almuerzo }
+          - { label: Festival, value: festival }
+          - { label: Stand, value: stand }
+          - { label: Jornada de investigación, value: jornada }
+          - { label: Voluntariado, value: voluntariado }
+      - label: Estado
+        name: estado
+        widget: select
+        default: pronto
+        options:
+          - { label: Inscripción abierta, value: abierto }
+          - { label: Próximamente, value: pronto }
+          - { label: Cupos llenos, value: lleno }
+          - { label: Online · abierto, value: online }
+          - { label: Realizado, value: realizado }
+      - label: Comisión
+        name: comision
+        widget: select
+        required: false
+        options:
+          - { label: 学习 Xuexi · Conocimiento Académico, value: xuexi }
+          - { label: 外联 Wailian · Idioma y Comunidad, value: wailian }
+          - { label: 信息 Xinxi · Difusión y Diseño, value: xinxi }
+      - { label: Área temática, name: areaEtiqueta, widget: string, required: false }
+      - { label: Ciclo, name: ciclo, widget: string, required: false }
+      - { label: Cupos, name: cupos, widget: number, required: false, default: 0, value_type: int, min: 0 }
+      - { label: Carácter chino, name: hanzi, widget: string, required: false, hint: 'Se muestra si no hay imagen. Ej. 书' }
+      - { label: Imagen de portada, name: imagen, widget: image, required: false, allow_multiple: false,
+          hint: 'La que se ve en la agenda, encabeza la subpágina y sale al compartir el enlace.' }
+      - label: Galería de fotos
+        name: galeria
+        widget: list
+        required: false
+        label_singular: foto
+        allow_add: true
+        hint: >-
+          Fotos del evento. Aparecen en la subpágina del evento y en la
+          página Galería. Arrastra para cambiar el orden.
+        field: { label: Foto, name: foto, widget: image }
+
+  # ────────────────────── CABECERA DE LA AGENDA ──────────────────────
+  # Lo que no es un evento pero sale en la página de agenda. Vive aparte
+  # porque data/eventos.json se regenera entero y no se puede editar.
+  - name: agenda_cabecera
+    label: Agenda · cabecera
     files:
-      - name: eventos
-        label: Eventos
-        file: data/eventos.json
+      - name: cabecera
+        label: Cabecera
+        file: data/agenda.json
         format: json
-        description: >-
-          Actividades del club. Los eventos con fecha pasada se mueven solos a
-          "Eventos anteriores": no hay que borrarlos.
         fields:
           - { name: _instrucciones, widget: hidden }
           - { name: _referencia, widget: hidden }
           - label: Temporada
             name: temporada
             widget: string
-            hint: Texto que aparece junto al título. Ej. "Segundo semestre 2026"
-          - label: Eventos
-            name: eventos
-            widget: list
-            label_singular: evento
-            summary: '{{fields.fecha}} · {{fields.titulo}}'
-            fields:
-              - { label: Título, name: titulo, widget: string }
-              - label: Fecha
-                name: fecha
-                widget: datetime
-                format: 'YYYY-MM-DD'
-                date_format: 'DD-MM-YYYY'
-                time_format: false
-                picker_utc: true
-              - { label: Hora, name: hora, widget: string, required: false, hint: 'Ej. 18:30' }
-              - { label: Lugar, name: lugar, widget: string, required: false }
-              - { label: Detalle, name: detalle, widget: text, required: false }
-              - label: Tipo
-                name: tipo
-                widget: select
-                options:
-                  - { label: Taller, value: taller }
-                  - { label: Charla, value: charla }
-                  - { label: Congreso, value: congreso }
-                  - { label: Almuerzo, value: almuerzo }
-                  - { label: Festival, value: festival }
-                  - { label: Stand, value: stand }
-                  - { label: Jornada de investigación, value: jornada }
-                  - { label: Voluntariado, value: voluntariado }
-              - label: Estado
-                name: estado
-                widget: select
-                default: pronto
-                options:
-                  - { label: Inscripción abierta, value: abierto }
-                  - { label: Próximamente, value: pronto }
-                  - { label: Cupos llenos, value: lleno }
-                  - { label: Online · abierto, value: online }
-                  - { label: Realizado, value: realizado }
-              - label: Comisión
-                name: comision
-                widget: select
-                required: false
-                options:
-                  - { label: 学习 Xuexi · Conocimiento Académico, value: xuexi }
-                  - { label: 外联 Wailian · Idioma y Comunidad, value: wailian }
-                  - { label: 信息 Xinxi · Difusión y Diseño, value: xinxi }
-              - { label: Área temática, name: areaEtiqueta, widget: string, required: false }
-              - { label: Ciclo, name: ciclo, widget: string, required: false }
-              - { label: Cupos, name: cupos, widget: number, required: false, default: 0, value_type: int, min: 0 }
-              - { label: Carácter chino, name: hanzi, widget: string, required: false, hint: 'Se muestra si no hay imagen. Ej. 书' }
-              - { label: Imagen de portada, name: imagen, widget: image, required: false, allow_multiple: false,
-                  hint: 'La que se ve en la agenda y encabeza la subpágina del evento.' }
-              - label: Galería de fotos
-                name: galeria
-                widget: list
-                required: false
-                label_singular: foto
-                allow_add: true
-                hint: >-
-                  Fotos del evento. Aparecen en la subpágina del evento y en la
-                  página Galería. Arrastra para cambiar el orden.
-                field: { label: Foto, name: foto, widget: image }
+            hint: Texto que aparece junto al título "Agenda viva". Ej. "Segundo semestre 2026"
 
   # ────────────────────────── REPORTAJES ─────────────────────────
   - name: investigacion

@@ -171,7 +171,9 @@
   function tarjeta(e){
     var d = fecha(e.fecha);
     var evId = e.id || encodeURIComponent(e.titulo);
-    var urlSubpagina = 'evento.html?id=' + encodeURIComponent(evId);
+    // Ruta propia por evento: /evento/<id>/. Relativa a propósito, para que
+    // valga igual en la raíz de un dominio que en un subdirectorio.
+    var urlSubpagina = 'evento/' + encodeURIComponent(evId) + '/';
     var est = esPasado(e)
       ? {txt:'Ya realizado', cls:'e-lleno'}
       : (ESTADOS[e.estado] || ESTADOS.pronto);
