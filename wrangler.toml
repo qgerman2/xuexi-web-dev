@@ -11,7 +11,7 @@
 # Para desplegarlo:  npx wrangler deploy
 # El código está en admin/oauth-worker.js
 
-name = "test"
+name = "panel"
 main = "admin/oauth-worker.js"
 compatibility_date = "2026-08-01"
 
@@ -21,11 +21,13 @@ compatibility_date = "2026-08-01"
 # cuenta equivocada.
 account_id = "FALTA_ACCOUNT_ID"
 
-# Client ID de la aplicación OAuth de GitHub que respalda este conector de
-# pruebas. Es público (aparece en cada enlace de acceso), así que puede vivir
-# aquí. Su callback debe ser https://test.qgerman2.workers.dev/callback
+# Valores públicos. La clave web de Firebase identifica el proyecto, no
+# autoriza nada: lo que protege los datos son firestore.rules.
 [vars]
-GITHUB_CLIENT_ID = "FALTA_GITHUB_CLIENT_ID"
+FIREBASE_API_KEY  = "AIzaSyCn6585qISodF-1DLx7fhC0eXhnn364xzc"
+FIREBASE_PROYECTO = "xuexi-sandbox-01"
+GITHUB_REPO       = "qgerman2/xuexi-web-dev"
 
-# El Client Secret NO va aquí. Se guarda aparte, fuera del repositorio, con:
-#   npx wrangler secret put GITHUB_CLIENT_SECRET
+# El token del programa NO va aquí. Es un PAT de grano fino, un solo repo,
+# Contents: lectura y escritura. Se guarda fuera del repositorio con:
+#   npx wrangler secret put GITHUB_BOT_TOKEN

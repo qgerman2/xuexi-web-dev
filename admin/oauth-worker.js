@@ -1,49 +1,189 @@
-/*
- * Conector de acceso para el panel de edición (Decap CMS).
+/* Conector del panel de edición · Xuexi Club UC
  *
- * Se instala en Cloudflare Workers, no en este sitio. Su único trabajo es
- * hacer el intercambio con GitHub para saber quién entra al panel.
+ * Decap corre entero en el navegador, así que no puede guardar un token de
+ * GitHub: cualquiera lo leería. Este Worker hace de intermediario.
  *
- * Existe porque GitHub exige un "client secret" que no puede vivir en el
- * navegador: cualquiera podría verlo en el código fuente. Aquí queda guardado
- * del lado del servidor, en las variables del Worker.
+ *   1. /auth          pide correo y contraseña de Xuexi. El navegador habla
+ *                     directo con Firebase — aquí nunca pasa una contraseña.
+ *                     Devuelve el idToken a Decap con el apretón de manos que
+ *                     Decap espera.
  *
- * Quién puede guardar cambios lo decide GitHub según los permisos de la
- * organización, no este archivo.
+ *   2. /github/...    Decap cree que habla con api.github.com (api_root en
+ *                     admin/config.yml). En realidad pasa por aquí: se valida
+ *                     el idToken, se comprueba que la persona sea 'admin' en
+ *                     Firestore, y recién entonces se reenvía a GitHub con el
+ *                     token del programa, que nunca sale de este Worker.
  *
- * Instrucciones de instalación: admin/LEEME-instalacion.md
+ * De paso se reescribe /user y el autor de cada commit, para que el historial
+ * diga quién editó de verdad y no el dueño del token.
+ *
+ * Secretos (npx wrangler secret put ...):
+ *   GITHUB_BOT_TOKEN    PAT de grano fino, un solo repo, Contents: RW
+ * Variables ([vars] en wrangler.toml, públicas):
+ *   FIREBASE_API_KEY    la clave web del proyecto
+ *   FIREBASE_PROYECTO   p.ej. xuexi-sandbox-01
+ *   GITHUB_REPO         p.ej. qgerman2/xuexi-web-dev
  */
 
-const GITHUB_AUTORIZAR = 'https://github.com/login/oauth/authorize';
-const GITHUB_TOKEN = 'https://github.com/login/oauth/access_token';
-
-// Desde dónde se permite abrir el panel.
 const ORIGENES_PERMITIDOS = [
   'https://xuexiclub.cl',
   'https://www.xuexiclub.cl',
   'https://xuexi-club-uc.github.io',
-  // Copia de desarrollo (qgerman2/xuexi-web-dev en GitHub Pages). El origen no
-  // lleva la ruta del proyecto: postMessage compara esquema, host y puerto.
-  'https://qgerman2.github.io'
+  'https://qgerman2.github.io',
+  'http://localhost:8000'
 ];
 
-function paginaRespuesta(mensaje, origenes) {
-  // Le devuelve el resultado a la ventana que abrió el panel.
+const ROL_REQUERIDO = 'admin';
+const GITHUB_API = 'https://api.github.com';
+
+// ─────────────────────────── Identidad ───────────────────────────
+
+// Caché por isolate: Decap hace muchas peticiones seguidas y cada una costaría
+// dos llamadas de red. 60 segundos es poco para que un cambio de rol quede
+// colgado, y suficiente para que una sesión de edición no se arrastre.
+const cache = new Map();
+
+function leerToken(peticion) {
+  const h = peticion.headers.get('Authorization') || '';
+  const m = h.match(/^(?:token|Bearer)\s+(.+)$/i);
+  return m ? m[1].trim() : null;
+}
+
+async function verificar(idToken, entorno) {
+  if (!idToken) return null;
+
+  const guardado = cache.get(idToken);
+  if (guardado && guardado.hasta > Date.now()) return guardado.miembro;
+
+  // ¿El idToken es válido y de este proyecto? Google responde con el uid.
+  const r = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${entorno.FIREBASE_API_KEY}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }) });
+  if (!r.ok) return null;
+  const uid = (await r.json()).users?.[0]?.localId;
+  if (!uid) return null;
+
+  // Su propia ficha. Usamos su token, no uno de administrador: las reglas ya
+  // permiten que cada quien lea la suya, así que nada aquí las esquiva.
+  const f = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${entorno.FIREBASE_PROYECTO}` +
+    `/databases/(default)/documents/miembros/${uid}`,
+    { headers: { Authorization: 'Bearer ' + idToken } });
+  if (!f.ok) return null;
+
+  const campos = (await f.json()).fields || {};
+  if (campos.rol?.stringValue !== ROL_REQUERIDO) return null;
+
+  const miembro = {
+    uid,
+    nombre: campos.nombre?.stringValue || 'Miembro Xuexi',
+    email: campos.email?.stringValue || `${uid}@xuexiclub.cl`
+  };
+  cache.set(idToken, { miembro, hasta: Date.now() + 60_000 });
+  return miembro;
+}
+
+// ──────────────────────────── CORS ────────────────────────────
+
+function cabecerasCors(origen) {
+  if (!ORIGENES_PERMITIDOS.includes(origen)) return null;
+  return {
+    'Access-Control-Allow-Origin': origen,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type, If-None-Match',
+    'Access-Control-Expose-Headers': 'ETag, Link',
+    'Access-Control-Max-Age': '86400'
+  };
+}
+
+// ───────────────────── Apretón de manos con Decap ─────────────────────
+
+function paginaLogin(entorno, origenes) {
   const html = `<!doctype html>
-<html lang="es"><head><meta charset="utf-8"><title>Conectando…</title></head>
-<body><p style="font-family:system-ui;padding:24px">Conectando con GitHub…</p>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Acceso al panel · Xuexi Club UC</title>
+<style>
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#1a1010;
+       color:#f4ece0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  form{width:min(340px,88vw);display:grid;gap:12px}
+  h1{font-size:1.15rem;font-weight:600;margin:0 0 4px;text-align:center}
+  p.sub{margin:0 0 10px;text-align:center;font-size:.82rem;opacity:.7}
+  label{font-size:.76rem;opacity:.8}
+  input{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:7px;
+        border:1px solid #4a3030;background:#241616;color:inherit;font:inherit}
+  button{padding:11px;border:0;border-radius:7px;background:#C0392B;color:#fff;
+         font:inherit;font-weight:600;cursor:pointer}
+  button[disabled]{opacity:.6;cursor:default}
+  .err{background:rgba(192,57,43,.18);border:1px solid #C0392B;border-radius:7px;
+       padding:9px 11px;font-size:.8rem;display:none}
+</style></head>
+<body>
+<form id="f">
+  <h1><span style="color:#D4AF61">学习</span> Panel de edición</h1>
+  <p class="sub">Entra con tu cuenta de miembro. Solo coordinación.</p>
+  <div class="err" id="err"></div>
+  <label for="e">Correo electrónico</label>
+  <input id="e" type="email" required autocomplete="username">
+  <label for="p">Contraseña</label>
+  <input id="p" type="password" required autocomplete="current-password">
+  <button id="b" type="submit">Entrar</button>
+</form>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script>
 (function(){
-  var mensaje = ${JSON.stringify(mensaje)};
-  var permitidos = ${JSON.stringify(origenes)};
-  function responder(e){
-    // Solo le contestamos al sitio del club, no a cualquier ventana.
-    if (permitidos.indexOf(e.origin) === -1) return;
-    window.opener.postMessage(mensaje, e.origin);
-    window.removeEventListener('message', responder, false);
+  var PERMITIDOS = ${JSON.stringify(origenes)};
+  firebase.initializeApp({
+    apiKey: ${JSON.stringify(entorno.FIREBASE_API_KEY)},
+    authDomain: ${JSON.stringify(entorno.FIREBASE_PROYECTO + '.firebaseapp.com')},
+    projectId: ${JSON.stringify(entorno.FIREBASE_PROYECTO)}
+  });
+
+  var form = document.getElementById('f'),
+      err  = document.getElementById('err'),
+      btn  = document.getElementById('b');
+
+  function fallar(t){ err.textContent = t; err.style.display = 'block';
+                      btn.disabled = false; btn.textContent = 'Entrar'; }
+
+  // Decap escucha este mensaje. Primero preguntamos a la ventana que nos abrió
+  // para enterarnos de su origen, y solo le contestamos a ella: así el token
+  // no se reparte a cualquier pestaña.
+  function entregar(token){
+    var mensaje = 'authorization:github:success:' +
+                  JSON.stringify({ token: token, provider: 'github' });
+    function responder(e){
+      if (PERMITIDOS.indexOf(e.origin) === -1) return;
+      window.opener.postMessage(mensaje, e.origin);
+      window.removeEventListener('message', responder, false);
+      document.body.innerHTML = '<p style="font-family:system-ui">Listo, ya puedes cerrar.</p>';
+    }
+    window.addEventListener('message', responder, false);
+    window.opener.postMessage('authorizing:github', '*');
   }
-  window.addEventListener('message', responder, false);
-  window.opener.postMessage('authorizing:github', '*');
+
+  form.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    err.style.display = 'none';
+    btn.disabled = true; btn.textContent = 'Verificando…';
+
+    firebase.auth()
+      .signInWithEmailAndPassword(document.getElementById('e').value.trim(),
+                                  document.getElementById('p').value)
+      .then(function(cred){ return cred.user.getIdToken(); })
+      .then(function(idToken){
+        if (!window.opener) { fallar('Abre el panel desde /admin/, no directamente.'); return; }
+        entregar(idToken);
+      })
+      .catch(function(e){
+        fallar(e.code === 'auth/invalid-credential'
+          ? 'Correo o contraseña incorrectos.'
+          : (e.message || 'No se pudo entrar.'));
+      });
+  });
 })();
 <\/script></body></html>`;
   return new Response(html, {
@@ -51,68 +191,80 @@ function paginaRespuesta(mensaje, origenes) {
   });
 }
 
+// ──────────────────────────── Worker ────────────────────────────
+
 export default {
   async fetch(peticion, entorno) {
     const url = new URL(peticion.url);
+    const origen = peticion.headers.get('Origin') || '';
 
-    // Paso 1: mandamos a la persona a identificarse en GitHub.
+    // 1 · La pantalla de acceso.
     if (url.pathname === '/auth') {
-      const estado = crypto.randomUUID();
-      const parametros = new URLSearchParams({
-        client_id: entorno.GITHUB_CLIENT_ID,
-        redirect_uri: `${url.origin}/callback`,
-        // Permiso acotado: solo repositorios públicos.
-        scope: url.searchParams.get('scope') || 'public_repo',
-        state: estado
-      });
-      return new Response(null, {
-        status: 302,
-        headers: {
-          Location: `${GITHUB_AUTORIZAR}?${parametros}`,
-          // Guardamos el estado para verificarlo al volver.
-          'Set-Cookie': `estado=${estado}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`
-        }
-      });
+      return paginaLogin(entorno, ORIGENES_PERMITIDOS);
     }
 
-    // Paso 2: GitHub nos devuelve aquí con un código de un solo uso.
-    if (url.pathname === '/callback') {
-      const codigo = url.searchParams.get('code');
-      const estadoRecibido = url.searchParams.get('state');
-      const galletas = peticion.headers.get('Cookie') || '';
-      const estadoGuardado = (galletas.match(/estado=([^;]+)/) || [])[1];
+    // 2 · Todo lo que Decap cree que es api.github.com.
+    if (url.pathname.startsWith('/github')) {
+      const cors = cabecerasCors(origen);
 
-      // Si el estado no calza, la petición no salió de nuestro panel.
-      if (!codigo || !estadoRecibido || estadoRecibido !== estadoGuardado) {
-        return paginaRespuesta(
-          'authorization:github:error:' + JSON.stringify({ message: 'Solicitud no válida' }),
-          ORIGENES_PERMITIDOS
-        );
+      if (peticion.method === 'OPTIONS') {
+        return new Response(null, { status: cors ? 204 : 403, headers: cors || {} });
+      }
+      if (!cors) {
+        return Response.json({ message: 'Origen no permitido' }, { status: 403 });
       }
 
-      const respuesta = await fetch(GITHUB_TOKEN, {
-        method: 'POST',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_id: entorno.GITHUB_CLIENT_ID,
-          client_secret: entorno.GITHUB_CLIENT_SECRET,
-          code: codigo
-        })
+      const miembro = await verificar(leerToken(peticion), entorno);
+      if (!miembro) {
+        // 401 y no 403: así Decap ofrece volver a entrar cuando el idToken
+        // caduca (dura una hora).
+        return Response.json(
+          { message: 'Sesión no válida o sin permisos de coordinación' },
+          { status: 401, headers: cors });
+      }
+
+      // /user no se reenvía: lo inventamos, y de ahí sale {{author-login}}.
+      if (url.pathname === '/github/user') {
+        return Response.json({
+          login: miembro.nombre,
+          name: miembro.nombre,
+          email: miembro.email,
+          avatar_url: ''
+        }, { headers: cors });
+      }
+
+      let cuerpo;
+      if (!['GET', 'HEAD'].includes(peticion.method)) {
+        cuerpo = await peticion.text();
+        // Quien firma el commit es la persona; quien lo sube, el panel.
+        if (url.pathname.includes('/contents/') || url.pathname.includes('/git/commits')) {
+          try {
+            const json = JSON.parse(cuerpo);
+            json.author = { name: miembro.nombre, email: miembro.email };
+            json.committer = { name: 'Panel Xuexi', email: 'panel@xuexiclub.cl' };
+            cuerpo = JSON.stringify(json);
+          } catch (e) { /* no era JSON: lo dejamos como vino */ }
+        }
+      }
+
+      const arriba = GITHUB_API + url.pathname.slice('/github'.length) + url.search;
+      const r = await fetch(arriba, {
+        method: peticion.method,
+        headers: {
+          Authorization: 'Bearer ' + entorno.GITHUB_BOT_TOKEN,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': peticion.headers.get('Content-Type') || 'application/json',
+          'User-Agent': 'xuexi-panel'
+        },
+        body: cuerpo
       });
-      const datos = await respuesta.json();
 
-      if (!datos.access_token) {
-        return paginaRespuesta(
-          'authorization:github:error:' + JSON.stringify({ message: datos.error || 'No se pudo entrar' }),
-          ORIGENES_PERMITIDOS
-        );
+      const salida = new Headers(cors);
+      for (const k of ['Content-Type', 'ETag', 'Link']) {
+        const v = r.headers.get(k);
+        if (v) salida.set(k, v);
       }
-
-      return paginaRespuesta(
-        'authorization:github:success:' +
-          JSON.stringify({ token: datos.access_token, provider: 'github' }),
-        ORIGENES_PERMITIDOS
-      );
+      return new Response(r.body, { status: r.status, headers: salida });
     }
 
     return new Response('Conector del panel de Xuexi Club UC.', {

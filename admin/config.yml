@@ -8,8 +8,10 @@ backend:
   name: github
   repo: qgerman2/xuexi-web-dev
   branch: main
-  base_url: https://test.qgerman2.workers.dev
-  auth_scope: public_repo
+  base_url: https://panel.qgerman2.workers.dev
+  # Decap cree que esto es api.github.com. El Worker valida la sesión de
+  # Xuexi y reenvía con el token del programa.
+  api_root: https://panel.qgerman2.workers.dev/github
   commit_messages:
     update: 'Actualiza {{collection}} desde el panel ({{author-login}})'
     delete: 'Elimina de {{collection}} desde el panel ({{author-login}})'
