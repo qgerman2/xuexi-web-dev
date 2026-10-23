@@ -92,7 +92,12 @@ collections:
         name: detalle
         widget: text
         required: false
-        hint: 'Separa los párrafos con una línea en blanco. Puedes ampliar el texto después de la actividad.'
+        hint: 'Texto que aparece antes del carrusel de fotos.'
+      - label: Texto después de la galería
+        name: detalleFinal
+        widget: text
+        required: false
+        hint: 'Texto opcional debajo del carrusel. No lleva un encabezado en la página.'
       - label: Enlace de inscripción
         name: inscripcion
         widget: string

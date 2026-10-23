@@ -16,34 +16,37 @@
 .event-breadcrumb a{color:var(--gold)}
 .event-breadcrumb a:hover{text-decoration:underline;text-underline-offset:4px}
 .event-breadcrumb [aria-current]{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65ch}
-.event-heading{position:relative;margin:0 auto 30px;max-width:820px}
+.event-overview{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:32px;
+  align-items:start;margin-bottom:44px}
+.event-heading{min-width:0;margin:0;padding:clamp(22px,3vw,36px);border:1px solid var(--line);
+  border-top:3px solid var(--gold);border-radius:var(--r);background:var(--card)}
 .event-tags{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px}
 .event-type{font-size:.67rem;letter-spacing:.15em;text-transform:uppercase;font-weight:600;
   border:1px solid var(--gold-deep);color:var(--gold);padding:4px 11px;border-radius:var(--r)}
 .event-tags .estado{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;
   padding:4px 11px;border:1px solid var(--line);border-radius:var(--r)}
-.event-heading h1{font-family:var(--serif);font-size:clamp(2.2rem,5.2vw,4rem);line-height:1.08;
-  max-width:22ch;overflow-wrap:anywhere;text-wrap:balance}
-.event-meta{display:flex;align-items:center;flex-wrap:wrap;gap:12px 24px;margin-top:22px;
-  font-size:.83rem;color:var(--cream-dim)}
-.event-meta>span{display:inline-flex;align-items:center;gap:8px}
-.event-meta svg{width:17px;height:17px;flex:none;color:var(--gold)}
-.event-actions{display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin-top:24px}
+.event-heading h1{font-family:var(--serif);font-size:clamp(2rem,3.4vw,3rem);line-height:1.12;
+  overflow-wrap:anywhere;text-wrap:balance}
+.event-meta{display:grid;gap:0;margin-top:28px;font-size:.9rem}
+.event-meta-item{display:flex;align-items:flex-start;gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}
+.event-meta svg{width:19px;height:19px;flex:none;color:var(--gold);margin-top:4px}
+.event-meta-label{display:block;font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--cream-dim);margin-bottom:4px}
+.event-actions{display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin-top:26px}
 .event-actions .btn{font-size:.73rem;padding:11px 18px}
 .event-instagram{color:var(--gold);font-size:.8rem;text-underline-offset:4px}
 .event-instagram:hover{text-decoration:underline}
-.event-content{max-width:820px;margin:0 auto 52px}
-.event-cover{position:static;margin:34px auto 44px;max-width:520px;width:100%;
-  border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--ink)}
+.event-cover{position:static;margin:0;width:100%;border:1px solid var(--line);
+  border-radius:var(--r);overflow:hidden;background:var(--ink)}
 .event-cover img{display:block;width:100%;height:auto;object-fit:contain}
-.event-cover--wide{max-width:100%}
-.event-information{padding:0 20px;border:0;background:none}
-.event-description{font-size:1.05rem;line-height:1.95;overflow-wrap:anywhere;color:var(--cream)}
+.event-cover--empty{aspect-ratio:4/5;display:grid;place-items:center}
+.event-cover--empty .glyph{font-size:6rem;color:var(--gold);opacity:.4}
+.event-information{max-width:820px;margin:0 auto 40px;padding:0 20px;border:0;background:none}
+.event-description{font-size:1.05rem;line-height:1.9;overflow-wrap:anywhere;color:var(--cream)}
 .event-description p{margin:0 0 1.6em}
-.event-description p:first-child{font-family:var(--serif);font-size:clamp(1.25rem,2.3vw,1.55rem);
-  line-height:1.65;color:var(--cream)}
 .event-description p:last-child{margin-bottom:0}
-.event-credit{font-size:.76rem;color:var(--cream-dim);margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
+.event-followup{margin-top:40px;margin-bottom:52px}
+.event-credit{font-size:.76rem;color:var(--cream-dim);margin-top:26px}
 .event-section-heading{display:flex;align-items:baseline;gap:12px;font-family:var(--serif);
   font-size:clamp(1.25rem,2.5vw,1.6rem);line-height:1.3;margin:0 0 25px}
 .event-section-heading .zh{color:var(--gold);font-size:.9em;flex:none}
@@ -79,6 +82,8 @@
 .event-related-copy time{font-size:.75rem;color:var(--cream-dim)}
 .event-related-copy>span{margin-top:auto;padding-top:8px;color:var(--gold);font-size:.75rem}
 @media(max-width:820px){
+  .event-overview{grid-template-columns:minmax(0,1fr);gap:22px}
+  .event-cover{max-width:540px;justify-self:center}
   .event-related-grid{gap:12px}
   .event-related-media{height:135px}
   .event-related-copy{padding:14px}
@@ -89,8 +94,7 @@
   .event-heading h1{font-size:2.2rem}
   .event-information{padding:0}
   .event-description{font-size:1rem;line-height:1.85}
-  .event-cover{margin:26px auto 32px}
-  .event-meta{gap:10px 18px;font-size:.77rem}
+  .event-meta{font-size:.85rem}
   .event-page .ev-stage-screen{aspect-ratio:4/3}
   .event-page .ev-stage-caption{padding:30px 14px 12px;gap:6px}
   .event-page .ev-stage-info h4{font-size:.85rem}
@@ -373,10 +377,13 @@
       ? '<a href="' + esc(inscripcion) + '" target="_blank" rel="noopener noreferrer" class="btn btn-sello">Inscribirme <span aria-hidden="true">↗</span></a>' : '';
     var horario = ev.hora ? ev.hora + (ev.horaFin ? '–' + ev.horaFin : '') + ' hrs.' : 'Horario por confirmar';
     var lugar = ev.lugar || (ev.estado === 'online' ? 'En línea' : 'Lugar por confirmar');
-    var parrafos = String(ev.detalle || 'Actividad organizada por Xuexi Club UC.').trim()
-      .split(/\n\s*\n/).filter(Boolean).map(function(p){
+    function textoParrafos(texto){
+      return String(texto || '').trim().split(/\n\s*\n/).filter(Boolean).map(function(p){
         return '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>';
       }).join('');
+    }
+    var parrafos = textoParrafos(ev.detalle);
+    var parrafosFinales = textoParrafos(ev.detalleFinal);
 
     var relacionados = evs.filter(function(otro){ return otro.id && otro.id !== ev.id; })
       .sort(function(a, b){
@@ -405,27 +412,26 @@
 
     var html = '' +
       '<nav class="event-breadcrumb" aria-label="Ruta de navegación"><a href="eventos.html">← Agenda</a></nav>' +
+      '<div class="event-overview">' +
+        '<figure class="event-cover' + (!ev.imagen ? ' event-cover--empty' : '') + '">' + mediaPortada + '</figure>' +
       '<header class="event-heading">' +
         '<div class="event-tags"><span class="event-type">' + esc(TIPOS[ev.tipo] || 'Actividad') + '</span>' +
           '<span class="estado ' + est.cls + '">' + esc(est.txt) + '</span></div>' +
         '<h1>' + esc(ev.titulo) + '</h1>' +
         '<div class="event-meta">' +
-          '<span>' + CAL + (fechaConfirmada ? '<time datetime="' + esc(ev.fecha) + '">' + esc(fechaTexto) + '</time>' : 'Fecha por confirmar') + '</span>' +
-          '<span>' + RELOJ + esc(horario) + '</span><span>' + PIN + esc(lugar) + '</span>' +
-          (ev.cupos > 0 ? '<span>Capacidad: ' + esc(ev.cupos) + ' participantes</span>' : '') +
+          '<div class="event-meta-item">' + CAL + '<div><span class="event-meta-label">Fecha</span>' +
+            (fechaConfirmada ? '<time datetime="' + esc(ev.fecha) + '">' + esc(fechaTexto) + '</time>' : 'Por confirmar') + '</div></div>' +
+          '<div class="event-meta-item">' + RELOJ + '<div><span class="event-meta-label">Horario</span>' + esc(horario) + '</div></div>' +
+          '<div class="event-meta-item">' + PIN + '<div><span class="event-meta-label">Lugar</span>' + esc(lugar) + '</div></div>' +
+          (ev.cupos > 0 ? '<div class="event-meta-item"><div><span class="event-meta-label">Capacidad</span>' + esc(ev.cupos) + ' participantes</div></div>' : '') +
         '</div>' +
         '<div class="event-actions">' + accion +
           (enlaceInstagram ? '<a class="event-instagram" href="' + esc(enlaceInstagram) + '" target="_blank" rel="noopener noreferrer">Ver en Instagram <span aria-hidden="true">↗</span></a>' : '') +
           '<a class="btn btn-gold" id="editar-evento" href="admin.html?evento=' + esc(encodeURIComponent(ev.id)) + '" hidden>Editar evento <span aria-hidden="true">↗</span></a>' +
         '</div>' +
-      '</header>' +
-      '<div class="event-content">' +
-        (ev.imagen ? '<figure class="event-cover">' + mediaPortada + '</figure>' : '') +
-        '<article class="event-information" aria-label="Descripción de la actividad">' +
-          '<div class="event-description">' + parrafos + '</div>' +
-          '<p class="event-credit">' + esc(organizador) + '</p>' +
-        '</article>' +
-      '</div>' +
+        '<p class="event-credit">' + esc(organizador) + '</p>' +
+      '</header></div>' +
+      (parrafos ? '<article class="event-information event-intro-text" aria-label="Descripción de la actividad"><div class="event-description">' + parrafos + '</div></article>' : '') +
 
       '<div class="gallery-section" id="fotos-evento">' +
         '<div class="gallery-head">' +
@@ -453,21 +459,11 @@
         '<div class="ev-thumbs-track" id="gallery-thumbs-track"></div>' +
         '<div id="admin-photo-container"></div>' +
         '<p class="gal-nota">Las fotografías oficiales son publicadas por el equipo de coordinación.</p>' +
-      '</div>' + masActividades;
+      '</div>' +
+      (parrafosFinales ? '<article class="event-information event-followup" aria-label="Texto adicional"><div class="event-description">' + parrafosFinales + '</div></article>' : '') +
+      masActividades;
 
     contenedor.innerHTML = html;
-    var portada = contenedor.querySelector('.event-cover img');
-    if (portada){
-      var ajustarFormato = function(){
-        if (portada.naturalWidth && portada.naturalHeight){
-          portada.parentElement.classList.toggle('event-cover--wide',
-            portada.naturalWidth / portada.naturalHeight > 1.4);
-        }
-      };
-      portada.addEventListener('load', ajustarFormato);
-      if (portada.complete) ajustarFormato();
-    }
-
     var stageImg = document.getElementById('stage-img');
     var stageCount = document.getElementById('stage-count');
     var stageTitle = document.getElementById('stage-caption-title');
