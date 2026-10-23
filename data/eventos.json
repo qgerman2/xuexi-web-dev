@@ -31,7 +31,6 @@
   "temporada": "Segundo semestre 2026",
   "eventos": [
     {
-      "id": "karaoke-chino",
       "ciclo": "segundo-semestre",
       "areaEtiqueta": "Cultura y Lengua",
       "cupos": 0,
@@ -41,14 +40,16 @@
       "imagen": "reencuentro-karaoke.jpg",
       "tipo": "festival",
       "hora": "11:00",
+      "galeria": [
+        "reencuentro-karaoke.jpg"
+      ],
       "detalle": "Parte de Reencuentro UC. Organiza Xuexi Club UC, con El Viaje del Estudiante UC. Apoya Primavera UC. Inscripción previa por QR. De 11:00 a 13:00 hrs.",
       "titulo": "Karaoke chino 开麦吧!!",
+      "id": "karaoke-chino",
       "comision": "wailian",
-      "fecha": "2026-08-03",
-      "galeria": ["reencuentro-karaoke.jpg"]
+      "fecha": "2026-08-03"
     },
     {
-      "id": "diplomacia-pandas",
       "ciclo": "segundo-semestre",
       "areaEtiqueta": "RR.II. y Diplomacia",
       "cupos": 0,
@@ -58,14 +59,16 @@
       "imagen": "reencuentro-pandas.jpg",
       "tipo": "festival",
       "hora": "12:30",
+      "galeria": [
+        "reencuentro-pandas.jpg"
+      ],
       "detalle": "Parte de Reencuentro UC. Organiza Xuexi Club UC, con El Viaje del Estudiante UC. Apoya Primavera UC. Inscripción previa por QR. De 12:30 a 14:00 hrs.",
       "titulo": "Diplomacia de los pandas",
+      "id": "diplomacia-pandas",
       "comision": "wailian",
-      "fecha": "2026-08-03",
-      "galeria": ["reencuentro-pandas.jpg"]
+      "fecha": "2026-08-03"
     },
     {
-      "id": "taller-caligrafia",
       "ciclo": "segundo-semestre",
       "areaEtiqueta": "Cultura y Lengua",
       "cupos": 0,
@@ -75,14 +78,16 @@
       "imagen": "reencuentro-caligrafia.jpg",
       "tipo": "taller",
       "hora": "11:00",
+      "galeria": [
+        "reencuentro-caligrafia.jpg"
+      ],
       "detalle": "Parte de Reencuentro UC. Organiza Xuexi Club UC, con El Viaje del Estudiante UC. Apoya Primavera UC. Inscripción previa por QR. De 11:00 a 13:10 hrs.",
       "titulo": "Taller de Caligrafía China",
+      "id": "taller-caligrafia",
       "comision": "wailian",
-      "fecha": "2026-08-03",
-      "galeria": ["reencuentro-caligrafia.jpg"]
+      "fecha": "2026-08-03"
     },
     {
-      "id": "caligrafia-budista",
       "ciclo": "segundo-semestre",
       "areaEtiqueta": "Cultura y Lengua",
       "cupos": 0,
@@ -92,14 +97,16 @@
       "imagen": "templo.jpg",
       "tipo": "taller",
       "hora": "14:50",
+      "galeria": [
+        "templo.jpg"
+      ],
       "detalle": "En colaboración con la Organización Budista Fo Guang Shan.",
       "titulo": "Taller de Caligrafía y Charla Budista",
+      "id": "caligrafia-budista",
       "comision": "wailian",
-      "fecha": "2025-11-13",
-      "galeria": ["templo.jpg"]
+      "fecha": "2025-11-13"
     },
     {
-      "id": "cocina-china",
       "ciclo": "segundo-semestre",
       "areaEtiqueta": "Cultura y Lengua",
       "cupos": 20,
@@ -109,14 +116,16 @@
       "imagen": "cocina.jpg",
       "tipo": "taller",
       "hora": "15:00",
+      "galeria": [
+        "cocina.jpg"
+      ],
       "detalle": "Impartido por Nathaly Jeria, Letras Inglesas UC. Nutrición y Dietética.",
       "titulo": "Taller de Cocina China: salteado de repollo con fideos de arroz y huevo",
+      "id": "cocina-china",
       "comision": "wailian",
-      "fecha": "2025-11-07",
-      "galeria": ["cocina.jpg"]
+      "fecha": "2025-11-07"
     },
     {
-      "id": "taichi",
       "ciclo": "segundo-semestre",
       "areaEtiqueta": "Cultura y Lengua",
       "cupos": 0,
@@ -126,14 +135,14 @@
       "imagen": "",
       "tipo": "taller",
       "hora": "10:00",
+      "galeria": [],
       "detalle": "Impartido por el maestro Aznous Boisseranc, director de la escuela de Taichi Longhun Wudao y profesor del Instituto Confucio UC.",
       "titulo": "Taichi: la unidad del cuerpo, respiración y espíritu (太极三条)",
+      "id": "taichi",
       "comision": "wailian",
-      "fecha": "2025-11-20",
-      "galeria": []
+      "fecha": "2025-11-20"
     },
     {
-      "id": "medicina-china",
       "ciclo": "segundo-semestre",
       "areaEtiqueta": "Cultura y Lengua",
       "cupos": 0,
@@ -143,14 +152,14 @@
       "imagen": "",
       "tipo": "charla",
       "hora": "13:30",
+      "galeria": [],
       "detalle": "Impartida por Junzi Lan, estudiante de Letras Hispánicas UC.",
       "titulo": "Acercamiento a la Medicina China",
+      "id": "medicina-china",
       "comision": "wailian",
-      "fecha": "2025-11-19",
-      "galeria": []
+      "fecha": "2025-11-19"
     },
     {
-      "id": "acupuntura",
       "ciclo": "segundo-semestre",
       "areaEtiqueta": "Cultura y Lengua",
       "cupos": 0,
@@ -160,14 +169,14 @@
       "imagen": "",
       "tipo": "charla",
       "hora": "11:00",
+      "galeria": [],
       "detalle": "En colaboración con la comunidad InterActuando. Impartida por Alonso Vera, profesional de Medicina China y acupunturista. Incluyó demostración práctica. Entre 11:00 y 12:30 hrs.",
       "titulo": "Acercamiento a la Acupuntura",
+      "id": "acupuntura",
       "comision": "wailian",
-      "fecha": "2025-11-26",
-      "galeria": []
+      "fecha": "2025-11-26"
     },
     {
-      "id": "webinar-fiberhome",
       "ciclo": "segundo-semestre",
       "areaEtiqueta": "Ciencia y Tecnología",
       "cupos": 0,
@@ -177,11 +186,19 @@
       "imagen": "",
       "tipo": "charla",
       "hora": "19:00",
+      "galeria": [],
       "detalle": "Organizado con la empresa Fiberhome.",
       "titulo": "Fiberhome Technical Webinar: 50G PON y soluciones de redes ópticas",
+      "id": "webinar-fiberhome",
       "comision": "xuexi",
-      "fecha": "2025-11-05",
-      "galeria": []
+      "fecha": "2025-11-05"
+    },
+    {
+      "estado": "pronto",
+      "cupos": 0,
+      "titulo": "test",
+      "fecha": "2026-10-23",
+      "tipo": "congreso"
     }
   ]
 }
