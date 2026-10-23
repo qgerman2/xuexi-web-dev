@@ -36,6 +36,12 @@ const ORIGENES_PERMITIDOS = [
 const ROL_REQUERIDO = 'admin';
 const GITHUB_API = 'https://api.github.com';
 
+// Cuánto dura una sesión del panel. El idToken de Firebase dura una hora y
+// Decap se queda con una copia en memoria, así que una sesión larga se cortaba
+// a media edición. Esto lo sustituye por algo que sí aguanta una tarde.
+const SESION_HORAS = 8;
+const PREFIJO_SESION = 'xs1.';
+
 // ─────────────────────────── Identidad ───────────────────────────
 
 // Caché por isolate: Decap hace muchas peticiones seguidas y cada una costaría
@@ -49,7 +55,14 @@ function leerToken(peticion) {
   return m ? m[1].trim() : null;
 }
 
-async function verificar(idToken, entorno) {
+// Acepta la sesión del panel o, la primera vez, un idToken de Firebase.
+async function verificar(testigo, entorno) {
+  if (!testigo) return null;
+  if (testigo.startsWith(PREFIJO_SESION)) return abrirSesion(testigo, entorno);
+  return verificarFirebase(testigo, entorno);
+}
+
+async function verificarFirebase(idToken, entorno) {
   if (!idToken) return null;
 
   const guardado = cache.get(idToken);
@@ -82,6 +95,53 @@ async function verificar(idToken, entorno) {
   };
   cache.set(idToken, { miembro, hasta: Date.now() + 60_000 });
   return miembro;
+}
+
+// ───────────────────── Sesión propia del panel ─────────────────────
+//
+// Un testigo firmado con HMAC: lleva dentro quién es la persona y hasta cuándo
+// vale, y se comprueba sin tocar la red. No hace falta guardarlo en ningún
+// sitio — la firma es la prueba.
+//
+// A cambio, el rol viaja dentro: si a alguien se le quita 'admin', sigue
+// pudiendo editar hasta que su sesión caduque. Para cortar todas de golpe,
+// cambia SESION_SECRETO.
+
+const b64 = (b) => btoa(String.fromCharCode(...new Uint8Array(b)))
+  .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+const deB64 = (s) => Uint8Array.from(
+  atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
+
+function claveSesion(entorno) {
+  return crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(entorno.SESION_SECRETO),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+}
+
+async function firmarSesion(miembro, entorno) {
+  const datos = JSON.stringify({
+    uid: miembro.uid, nombre: miembro.nombre, email: miembro.email,
+    exp: Date.now() + SESION_HORAS * 3600_000
+  });
+  const bytes = new TextEncoder().encode(datos);
+  const mac = await crypto.subtle.sign('HMAC', await claveSesion(entorno), bytes);
+  return PREFIJO_SESION + b64(bytes) + '.' + b64(mac);
+}
+
+async function abrirSesion(testigo, entorno) {
+  try {
+    const [cuerpo, mac] = testigo.slice(PREFIJO_SESION.length).split('.');
+    if (!cuerpo || !mac) return null;
+    const bytes = deB64(cuerpo);
+    const vale = await crypto.subtle.verify(
+      'HMAC', await claveSesion(entorno), deB64(mac), bytes);
+    if (!vale) return null;
+    const d = JSON.parse(new TextDecoder().decode(bytes));
+    return d.exp > Date.now() ? { uid: d.uid, nombre: d.nombre, email: d.email } : null;
+  } catch (e) {
+    return null;
+  }
 }
 
 // ──────────────────────────── CORS ────────────────────────────
@@ -203,7 +263,25 @@ export default {
       return paginaLogin(entorno, ORIGENES_PERMITIDOS);
     }
 
-    // 2 · Todo lo que Decap cree que es api.github.com.
+    // 2 · Cambiar un idToken de Firebase por una sesión del panel.
+    if (url.pathname === '/sesion' && peticion.method === 'POST') {
+      const cors = cabecerasCors(origen);
+      if (!cors) return Response.json({ message: 'Origen no permitido' }, { status: 403 });
+      const miembro = await verificarFirebase(leerToken(peticion), entorno);
+      if (!miembro) {
+        return Response.json({ message: 'Sin permisos de coordinación' },
+                             { status: 401, headers: cors });
+      }
+      return Response.json({ token: await firmarSesion(miembro, entorno) },
+                           { headers: cors });
+    }
+
+    if (url.pathname === '/sesion' && peticion.method === 'OPTIONS') {
+      const cors = cabecerasCors(origen);
+      return new Response(null, { status: cors ? 204 : 403, headers: cors || {} });
+    }
+
+    // 3 · Todo lo que Decap cree que es api.github.com.
     if (url.pathname.startsWith('/github')) {
       const cors = cabecerasCors(origen);
 

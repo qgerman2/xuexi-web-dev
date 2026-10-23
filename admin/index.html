@@ -8,53 +8,252 @@
 <link rel="icon" href="../assets/logo.png">
 <style>
   body{margin:0;font-family:"Avenir Next",system-ui,-apple-system,"Segoe UI",sans-serif}
-  .aviso{max-width:620px;margin:0 auto;padding:56px 24px;color:#2a2222;line-height:1.6}
-  .aviso h1{font-family:"Hoefler Text",Georgia,serif;font-size:1.6rem;font-weight:normal;margin:0 0 6px}
-  .aviso .zh{font-family:"Songti SC","Noto Serif SC",serif;color:#C0392B}
-  .aviso p{margin:0 0 14px}
-  .aviso ol{padding-left:20px}
-  .aviso li{margin-bottom:9px}
-  .aviso code{background:#f2ede6;border-radius:3px;padding:2px 6px;font-size:.9em}
-  .aviso .box{border:1px solid #e0d6c6;border-left:3px solid #C0392B;
-    border-radius:4px;padding:16px 18px;background:#faf7f2;margin-bottom:22px}
-  .aviso a{color:#A81E1E}
+  /* La portada de acceso. Decap pinta encima cuando la sesión es válida. */
+  #puerta{min-height:100vh;display:grid;place-items:center;background:#1a1010;color:#f4ece0}
+  #puerta.oculto{display:none}
+  .caja{width:min(350px,88vw);display:grid;gap:12px}
+  .caja h1{font-size:1.15rem;font-weight:600;margin:0;text-align:center}
+  .caja .zh{color:#D4AF61}
+  .caja p.sub{margin:0 0 6px;text-align:center;font-size:.82rem;opacity:.7}
+  .caja label{font-size:.76rem;opacity:.8}
+  .caja input{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:7px;
+    border:1px solid #4a3030;background:#241616;color:inherit;font:inherit}
+  .caja button{padding:11px;border:0;border-radius:7px;background:#C0392B;color:#fff;
+    font:inherit;font-weight:600;cursor:pointer}
+  .caja button[disabled]{opacity:.6;cursor:default}
+  .caja .secundario{background:transparent;border:1px solid #4a3030;color:#f4ece0}
+  .msj{border-radius:7px;padding:9px 11px;font-size:.8rem;display:none}
+  .msj.error{background:rgba(192,57,43,.18);border:1px solid #C0392B}
+  .msj.aviso{background:rgba(212,175,97,.14);border:1px solid #D4AF61}
+  .cargando{text-align:center;font-size:.85rem;opacity:.7}
 </style>
 </head>
 <body>
 
-<div id="aviso" class="aviso" hidden>
-  <h1><span class="zh">学习</span> Panel de edición</h1>
-  <div class="box">
-    <p style="margin:0"><b>Falta un paso para activarlo.</b> El panel necesita un
-    conector que verifique quién eres con GitHub antes de poder guardar cambios.</p>
+<div id="puerta">
+  <div class="caja">
+    <h1><span class="zh">学习</span> Panel de edición</h1>
+    <p class="sub" id="sub">Comprobando sesión…</p>
+
+    <div class="msj" id="msj"></div>
+
+    <form id="form" hidden>
+      <div style="display:grid;gap:12px">
+        <div>
+          <label for="correo">Correo electrónico</label>
+          <input id="correo" type="email" required autocomplete="username">
+        </div>
+        <div>
+          <label for="clave">Contraseña</label>
+          <input id="clave" type="password" required autocomplete="current-password">
+        </div>
+        <button id="entrar" type="submit">Entrar</button>
+      </div>
+    </form>
+
+    <button id="salir" class="secundario" hidden type="button">Cerrar sesión</button>
   </div>
-  <p>Para dejarlo funcionando:</p>
-  <ol>
-    <li>Sigue las instrucciones de <code>admin/LEEME-instalacion.md</code>
-      en el repositorio.</li>
-    <li>Cuando tengas la dirección del Worker de Cloudflare, pégala en
-      <code>admin/config.yml</code>, en la línea <code>base_url</code>.</li>
-  </ol>
-  <p>Mientras tanto, el sitio sigue funcionando con normalidad y el <a href="../admin.html">panel antiguo de eventos</a> sigue disponible.</p>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="../assets/firebase-config.js?v=28"></script>
 <script>
-  // Si la configuración todavía trae el marcador de posición, mostramos las
-  // instrucciones en vez de un login que no va a funcionar.
-  fetch('config.yml', {cache: 'no-cache'})
-    .then(function(r){ return r.ok ? r.text() : ''; })
-    .then(function(txt){
-      if (!txt || txt.indexOf('PEGAR-AQUI-LA-URL-DEL-WORKER') !== -1){
-        document.getElementById('aviso').hidden = false;
+/* Acceso al panel con la cuenta de Xuexi.
+ *
+ * Decap trae su propio botón de "entrar" que abre una ventana emergente. Aquí
+ * no hace falta: si ya hay una sesión de coordinación, dejamos la credencial
+ * donde Decap la busca (localStorage) ANTES de cargarlo, y arranca directo.
+ *
+ * Lo que guardamos es el idToken de Firebase, no un token de GitHub. El Worker
+ * lo valida en cada petición y vuelve a comprobar el rol contra Firestore, así
+ * que esto no concede nada que la persona no tuviera ya.
+ *
+ * El formato de abajo salió de iniciar sesión una vez por el camino normal y
+ * mirar qué dejó Decap en localStorage. Si algún día se actualiza Decap y el
+ * panel deja de arrancar solo, ese es el primer sitio donde mirar.
+ */
+(function(){
+  'use strict';
+
+  var CLAVE_DECAP = 'decap-cms-user';
+  // Se rellena desde config.yml para no repetir la dirección en dos sitios.
+  var WORKER = null;
+  // Versión FIJA, no un rango. El panel inyecta valores en el formulario de
+  // Decap buscando por el texto de las etiquetas (ver admin.html), así que
+  // depende de su HTML. Con '^3.8.0' unpkg servía lo último que hubiera —
+  // en octubre de 2026 ya era la 3.17.1 — y una actualización silenciosa
+  // podía romper el panel sin que nadie hubiera tocado nada.
+  // Al subir de versión: probar el acceso y la inyección antes de dejarlo.
+  var DECAP_SRC = 'https://unpkg.com/decap-cms@3.17.1/dist/decap-cms.js';
+  var ROL_REQUERIDO = 'admin';
+
+  var puerta = document.getElementById('puerta'),
+      form   = document.getElementById('form'),
+      sub    = document.getElementById('sub'),
+      msj    = document.getElementById('msj'),
+      btn    = document.getElementById('entrar'),
+      salir  = document.getElementById('salir');
+
+  var decapCargado = false;
+
+  function decir(texto, clase){
+    msj.textContent = texto;
+    msj.className = 'msj ' + (clase || 'error');
+    msj.style.display = texto ? 'block' : 'none';
+  }
+
+  function pedirCredenciales(texto){
+    sub.textContent = 'Entra con tu cuenta de miembro.';
+    form.hidden = false;
+    salir.hidden = true;
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+    if (texto) decir(texto);
+  }
+
+  function cargarDecap(){
+    if (decapCargado) return;
+    decapCargado = true;
+    puerta.classList.add('oculto');
+    var s = document.createElement('script');
+    s.src = DECAP_SRC;
+    document.body.appendChild(s);
+  }
+
+  // Lee base_url de config.yml, para que la dirección del Worker viva en un
+  // solo sitio.
+  function direccionWorker(){
+    if (WORKER) return Promise.resolve(WORKER);
+    return fetch('config.yml', {cache: 'no-cache'})
+      .then(function(r){ return r.text(); })
+      .then(function(txt){
+        var m = txt.match(/^\s*base_url:\s*(\S+)/m);
+        if (!m) throw new Error('config.yml no tiene base_url');
+        WORKER = m[1].replace(/\/$/, '');
+        return WORKER;
+      });
+  }
+
+  // Cambia el idToken de Firebase (una hora) por una sesión del panel, que
+  // dura lo que diga el Worker. Sin esto, una tarde de edición se cortaba a
+  // la hora porque Decap se queda con una copia del token en memoria.
+  function pedirSesion(user){
+    return Promise.all([user.getIdToken(), direccionWorker()])
+      .then(function(r){
+        return fetch(r[1] + '/sesion', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + r[0] }
+        });
+      })
+      .then(function(resp){
+        if (!resp.ok) throw new Error('El conector rechazó la sesión (' + resp.status + ')');
+        return resp.json();
+      })
+      .then(function(d){
+        if (!d.token) throw new Error('El conector no devolvió sesión');
+        return d.token;
+      });
+  }
+
+  // Deja la credencial donde Decap la lee al arrancar.
+  function sembrarSesion(user, perfil){
+    return pedirSesion(user).then(function(testigo){
+      var nombre = perfil.nombre || user.email;
+      localStorage.setItem(CLAVE_DECAP, JSON.stringify({
+        name: nombre,
+        login: nombre,          // esto es lo que acaba en {{author-login}}
+        email: user.email,
+        token: testigo,
+        // Imprescindible: Decap descarta la sesión guardada si esto no
+        // coincide con backend.name de config.yml. Sin este campo arranca
+        // igualmente, pero mostrando "Iniciar sesión con GitHub".
+        backendName: 'github'
+      }));
+      return testigo;
+    });
+  }
+
+  // La sesión del panel dura horas, pero la renovamos a mitad de camino para
+  // que recargar nunca pida entrar de nuevo. Decap conserva su copia en
+  // memoria: esto sirve para la siguiente carga, no para la sesión en curso.
+  function mantenerVivo(user, perfil){
+    setInterval(function(){
+      sembrarSesion(user, perfil).catch(function(){});
+    }, 3 * 60 * 60 * 1000);
+  }
+
+  function comprobarRol(user){
+    return firebase.firestore().collection('miembros').doc(user.uid).get()
+      .then(function(doc){ return doc.exists ? doc.data() : null; });
+  }
+
+  if (!window.XUEXI_FIREBASE_CONFIG || typeof firebase === 'undefined' || !firebase.apps.length){
+    sub.textContent = '';
+    decir('El acceso no está configurado: revisa assets/firebase-config.js.');
+    return;
+  }
+
+  firebase.auth().onAuthStateChanged(function(user){
+    if (!user){
+      try { localStorage.removeItem(CLAVE_DECAP); } catch(e){}
+      pedirCredenciales();
+      return;
+    }
+
+    sub.textContent = 'Comprobando permisos…';
+    form.hidden = true;
+
+    comprobarRol(user).then(function(perfil){
+      if (!perfil || perfil.rol !== ROL_REQUERIDO){
+        sub.textContent = '';
+        decir('Tu cuenta no tiene permisos de coordinación. Pide que te los den '
+              + 'o entra con otra cuenta.', 'aviso');
+        salir.hidden = false;
         return;
       }
-      var s = document.createElement('script');
-      s.src = 'https://unpkg.com/decap-cms@^3.8.0/dist/decap-cms.js';
-      document.body.appendChild(s);
-    })
-    .catch(function(){
-      document.getElementById('aviso').hidden = false;
+      return sembrarSesion(user, perfil).then(function(){
+        mantenerVivo(user, perfil);
+        cargarDecap();
+      }).catch(function(e){
+        // Aquí el perfil ya estaba bien: lo que falló es pedirle la sesión al
+        // conector. "Failed to fetch" casi siempre significa que el Worker
+        // desplegado todavía no tiene la ruta /sesion, o que este origen no
+        // está en su lista de permitidos.
+        sub.textContent = '';
+        decir('No se pudo abrir sesión con el conector: ' + (e.message || e)
+              + '. Comprueba que el Worker esté actualizado y que este origen '
+              + 'esté en ORIGENES_PERMITIDOS.');
+        salir.hidden = false;
+      });
+    }).catch(function(e){
+      sub.textContent = '';
+      decir('No se pudo comprobar tu perfil: ' + (e.message || e));
+      salir.hidden = false;
     });
+  });
+
+  form.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    decir('');
+    btn.disabled = true;
+    btn.textContent = 'Verificando…';
+    firebase.auth().signInWithEmailAndPassword(
+      document.getElementById('correo').value.trim(),
+      document.getElementById('clave').value
+    ).catch(function(e){
+      pedirCredenciales(e.code === 'auth/invalid-credential'
+        ? 'Correo o contraseña incorrectos.'
+        : (e.message || 'No se pudo entrar.'));
+    });
+  });
+
+  salir.addEventListener('click', function(){
+    try { localStorage.removeItem(CLAVE_DECAP); } catch(e){}
+    firebase.auth().signOut();
+  });
+})();
 </script>
 </body>
 </html>

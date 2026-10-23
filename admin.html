@@ -3,526 +3,321 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Panel de actividades · Xuexi Club UC</title>
 <meta name="robots" content="noindex">
+<title>Panel del equipo · Xuexi Club UC</title>
 <link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="assets/site.css?v=28">
 <style>
-:root{
-  --ground:#4E0A0A; --ground-2:#3B0707; --ground-3:#5C0D0D; --ink:#1A1414;
-  --vermilion:#C0392B; --vermilion-deep:#A81E1E;
-  --gold:#D4AF61; --gold-deep:#C9A24B;
-  --cream:#F5EFE6; --cream-dim:rgba(245,239,230,.68); --cream-faint:rgba(245,239,230,.42);
-  --jade:#2E7D6B; --jade-light:#37917B;
-  --line:rgba(212,175,97,.24); --card:rgba(255,246,236,.05);
-  --serif:"Hoefler Text","Didot",Georgia,serif;
-  --hanzi:"Songti SC","STSong",serif;
-  --sans:"Avenir Next","Segoe UI",system-ui,sans-serif;
-  --mono:"SF Mono",ui-monospace,Menlo,monospace;
-  --r:3px;
-}
-*{box-sizing:border-box}
-[hidden]{display:none!important}
-body{margin:0;background:var(--ground);color:var(--cream);font-family:var(--sans);
-  font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
-h1,h2,h3{margin:0;font-weight:normal}
-.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  :root{
+    --fondo:#1a1010; --panel:#241616; --linea:#4a3030;
+    --crema:#f4ece0; --oro:#D4AF61; --granate:#C0392B;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--fondo);color:var(--crema);
+       font-family:"Avenir Next",system-ui,-apple-system,"Segoe UI",sans-serif}
 
-header{border-bottom:1px solid var(--line);background:var(--ground-2);position:sticky;top:0;z-index:20}
-header .row{display:flex;align-items:center;gap:14px;height:64px}
-header .b{font-family:var(--serif);letter-spacing:.12em;display:flex;gap:9px;align-items:center;font-size:.95rem}
-header .b .zh{font-family:var(--hanzi);color:var(--gold);font-size:1.1rem}
-header .tag{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--cream-faint);
-  border:1px solid var(--line);padding:4px 10px;border-radius:20px}
-header a.ver{margin-left:auto;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--gold-deep);text-decoration:none}
-header a.ver:hover{color:var(--gold)}
+  /* ── Puerta ─────────────────────────────────────────────── */
+  #puerta{min-height:100vh;display:grid;place-items:center}
+  #puerta.oculto{display:none}
+  .caja{width:min(350px,88vw);display:grid;gap:12px}
+  .caja h1{font-size:1.15rem;font-weight:600;margin:0;text-align:center}
+  .zh{color:var(--oro)}
+  .caja p.sub{margin:0 0 6px;text-align:center;font-size:.82rem;opacity:.7}
+  label{font-size:.76rem;opacity:.8}
+  input{width:100%;padding:10px 12px;border-radius:7px;border:1px solid var(--linea);
+        background:var(--panel);color:inherit;font:inherit}
+  button{padding:11px;border:0;border-radius:7px;background:var(--granate);color:#fff;
+         font:inherit;font-weight:600;cursor:pointer}
+  button[disabled]{opacity:.6;cursor:default}
+  button.secundario{background:transparent;border:1px solid var(--linea);color:var(--crema)}
+  .msj{border-radius:7px;padding:9px 11px;font-size:.8rem;display:none}
+  .msj.error{background:rgba(192,57,43,.18);border:1px solid var(--granate)}
+  .msj.aviso{background:rgba(212,175,97,.14);border:1px solid var(--oro)}
 
-.intro{padding:26px 0 4px}
-.intro h1{font-family:var(--serif);font-size:1.8rem}
-.intro p{color:var(--cream-dim);max-width:64ch;margin:10px 0 0;font-size:.92rem}
-.nota{border:1px solid var(--line);border-left:3px solid var(--gold-deep);border-radius:var(--r);
-  background:var(--card);padding:14px 18px;margin:20px 0;font-size:.85rem;color:var(--cream-dim)}
-.nota b{color:var(--cream);font-weight:600}
-.nota code{font-family:var(--mono);font-size:.85em;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:2px}
+  /* ── Espacio de trabajo ─────────────────────────────────── */
+  #taller{display:none}
+  #taller.visible{display:block}
 
-.cols{display:grid;grid-template-columns:400px 1fr;gap:26px;align-items:start;padding-bottom:60px}
-@media(max-width:900px){.cols{grid-template-columns:1fr}}
+  /* Barra de herramientas del panel, bajo la cabecera del sitio. */
+  .barra{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+         padding:10px clamp(20px,5vw,56px);
+         border-bottom:1px solid var(--line,#4a3030);font-size:.84rem}
+  .barra .quien{opacity:.75;font-size:.78rem}
+  .barra .hueco{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .barra button{padding:7px 13px;font-size:.78rem}
 
-.panel{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:22px}
-.panel h2{font-family:var(--serif);font-size:1.15rem;margin-bottom:4px;display:flex;align-items:baseline;gap:9px}
-.panel h2 .zh{font-family:var(--hanzi);color:var(--vermilion);font-size:1rem}
-.panel .sub{font-size:.76rem;color:var(--cream-faint);margin-bottom:18px}
-
-label{display:block;margin-bottom:13px}
-label .lb{display:block;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--gold-deep);font-weight:600;margin-bottom:5px}
-label .hint{display:block;font-size:.7rem;color:var(--cream-faint);margin-top:4px;line-height:1.4}
-input,select,textarea{width:100%;background:var(--ground-2);border:1px solid var(--line);
-  border-radius:var(--r);color:var(--cream);font-family:var(--sans);font-size:.88rem;padding:9px 11px}
-textarea{resize:vertical;min-height:64px;line-height:1.5}
-input:focus,select:focus,textarea:focus{outline:2px solid var(--gold);outline-offset:1px;border-color:transparent}
-.par{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-select option{background:var(--ground-2);color:var(--cream)}
-
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;
-  font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;padding:12px 20px;border-radius:var(--r);
-  border:1px solid transparent;cursor:pointer;font-family:var(--sans);transition:.2s}
-.btn:hover{transform:translateY(-1px)}
-.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-.btn .zh{font-family:var(--hanzi);letter-spacing:0;font-size:.95rem}
-.b-sello{background:var(--vermilion);color:#FBEDE7;width:100%}
-.b-sello:hover{background:var(--vermilion-deep)}
-.b-jade{background:var(--jade-light);color:#F1FBF7}
-.b-jade:hover{background:var(--jade)}
-.b-gold{border-color:var(--gold-deep);color:var(--gold);background:transparent}
-.b-gold:hover{background:rgba(212,175,97,.14)}
-.b-ghost{border-color:var(--line);color:var(--cream-dim);background:transparent}
-.b-ghost:hover{border-color:var(--cream-faint);color:var(--cream)}
-
-.lista{display:flex;flex-direction:column;gap:12px}
-.fila{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:15px 17px;
-  display:flex;gap:14px;align-items:flex-start}
-.fila.pasado{opacity:.55}
-.fila .fch{text-align:center;flex:none;min-width:46px;border-right:1px solid var(--line);padding-right:12px}
-.fila .fch b{display:block;font-family:var(--serif);font-size:1.3rem;line-height:1}
-.fila .fch span{font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-faint)}
-.fila .cnt{flex:1;min-width:0}
-.fila .cnt h3{font-family:var(--serif);font-size:1rem;line-height:1.25}
-.fila .cnt .m{font-size:.76rem;color:var(--cream-dim);margin-top:3px}
-.fila .cnt .badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}
-.bdg{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
-  padding:3px 8px;border-radius:2px;border:1px solid var(--line);color:var(--cream-dim)}
-.bdg.com{color:var(--gold);border-color:var(--gold-deep)}
-.bdg.com .zh{font-family:var(--hanzi);letter-spacing:0}
-.bdg.est-abierto,.bdg.est-online{background:var(--jade);color:#F1FBF7;border-color:transparent}
-.bdg.est-pronto{color:var(--gold);border-color:var(--gold-deep)}
-.bdg.est-lleno,.bdg.est-realizado{background:rgba(0,0,0,.4);color:var(--cream-faint)}
-.fila .acc{display:flex;flex-direction:column;gap:6px;flex:none}
-.mini{font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;padding:6px 11px;
-  border-radius:2px;border:1px solid var(--line);background:transparent;color:var(--cream-dim);cursor:pointer}
-.mini:hover{border-color:var(--gold-deep);color:var(--gold)}
-.mini.del:hover{border-color:var(--vermilion);color:var(--vermilion)}
-
-.vacio{border:1px dashed var(--line);border-radius:var(--r);padding:34px;text-align:center;
-  color:var(--cream-faint);font-size:.88rem}
-
-.salida{margin-top:20px}
-.salida textarea{font-family:var(--mono);font-size:.72rem;min-height:190px;line-height:1.5}
-.acciones{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
-.acciones .btn{flex:1;min-width:150px}
-.aviso{font-size:.78rem;padding:10px 13px;border-radius:var(--r);margin-top:12px}
-.aviso.ok{background:rgba(46,125,107,.2);border:1px solid var(--jade-light);color:#B8E6D8}
-.aviso.err{background:rgba(192,57,43,.2);border:1px solid var(--vermilion);color:#F3C9C4}
-
-.pasos{counter-reset:p;list-style:none;padding:0;margin:14px 0 0}
-.pasos li{counter-increment:p;position:relative;padding-left:32px;margin-bottom:11px;
-  font-size:.83rem;color:var(--cream-dim);line-height:1.5}
-.pasos li::before{content:counter(p);position:absolute;left:0;top:0;width:21px;height:21px;
-  border-radius:50%;background:var(--vermilion);color:#FBEDE7;font-size:.68rem;font-weight:700;
-  display:grid;place-items:center}
-.pasos li b{color:var(--cream)}
-.pasos a{color:var(--gold)}
-
-footer{border-top:1px solid var(--line);padding:22px 0 40px;font-size:.74rem;color:var(--cream-faint)}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}.btn:hover{transform:none}}
+  /* El editor, con aire alrededor en vez de pegado a los bordes. */
+  .marco{padding:clamp(12px,2.2vw,26px) clamp(14px,5vw,56px) clamp(18px,3vw,34px)}
+  #cms{display:block;width:100%;height:calc(100vh - 220px);min-height:520px;
+       border:1px solid var(--line,#4a3030);border-radius:10px;background:#fff;
+       box-shadow:0 14px 34px -18px rgba(0,0,0,.7)}
+  @media(max-width:720px){ #cms{height:calc(100vh - 260px)} }
 </style>
 </head>
 <body>
 
-<header>
+<!-- ─────────────────────────── Puerta ─────────────────────────── -->
+<div id="puerta">
+  <div class="caja">
+    <h1><span class="zh">学习</span> Panel del equipo</h1>
+    <p class="sub" id="sub">Comprobando sesión…</p>
+    <div class="msj" id="msj"></div>
+
+    <form id="form" hidden>
+      <div style="display:grid;gap:12px">
+        <div>
+          <label for="correo">Correo electrónico</label>
+          <input id="correo" type="email" required autocomplete="username">
+        </div>
+        <div>
+          <label for="clave">Contraseña</label>
+          <input id="clave" type="password" required autocomplete="current-password">
+        </div>
+        <button id="entrar" type="submit">Entrar</button>
+      </div>
+    </form>
+
+    <button id="salir-puerta" class="secundario" hidden type="button">Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- ────────────────────── Espacio de trabajo ────────────────────── -->
+<div id="taller">
+<header class="nav">
   <div class="wrap row">
-    <span class="b"><span class="zh">学习</span> XUEXI CLUB</span>
-    <span class="tag">Panel de actividades · solo equipo</span>
-    <a class="ver" href="index.html">Ver el sitio →</a>
+    <a class="brand" href="index.html">
+      <img src="assets/logo.png" alt="">
+      <span><span class="zh">学习</span> XUEXI CLUB</span>
+    </a>
+    <button class="nav-burger" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Abrir menú">
+      <span></span><span></span><span></span>
+    </button>
+    <ul id="nav-menu">
+      <li class="has-drop">
+        <a href="eventos.html"><span class="zh">活动</span>Eventos</a>
+        <ul class="drop">
+          <li><a href="eventos.html">Agenda</a></li>
+          <li><a href="voluntariados.html">Voluntariados</a></li>
+        </ul>
+      </li>
+      <li class="has-drop">
+        <a href="investigacion.html"><span class="zh">研究</span>Investigación</a>
+        <ul class="drop">
+          <li><a href="investigacion.html#economia">Economía y Negocios</a></li>
+          <li><a href="investigacion.html#ciencia">Ciencia y Tecnología</a></li>
+          <li><a href="investigacion.html#diplomacia">Diplomacia y RR.II.</a></li>
+          <li><a href="investigacion.html#cultura">Cultura, Arte y Lengua</a></li>
+          <li><a href="investigacion.html#politicas">Políticas Públicas y Gobernanza</a></li>
+          <li><a href="investigacion.html#otros">Otros</a></li>
+        </ul>
+      </li>
+      <li><a href="galeria.html"><span class="zh">相册</span>Galería</a></li>
+      <li class="has-drop">
+        <a href="equipo.html"><span class="zh">我们</span>Quiénes somos</a>
+        <ul class="drop">
+          <li><a href="equipo.html">Equipo</a></li>
+          <li><a href="red.html">Organizaciones afines</a></li>
+        </ul>
+      </li>
+      <li id="nav-item-cuenta"><a href="login.html"><span class="zh">登录</span>Miembros</a></li>
+    </ul>
+    <a class="cta" href="index.html#unete">Únete</a>
   </div>
 </header>
-
-<div class="wrap intro">
-  <h1>Agregar y editar actividades</h1>
-  <p>Los campos siguen los Estatutos Xuexi 2026: los tipos de actividad del Artículo 2.1,
-    las comisiones de los Artículos 5 a 7 y los ciclos del Artículo 6.3.</p>
-</div>
-
-<div class="wrap">
-  <div class="nota">
-    <b>Cómo funciona.</b> El sitio no tiene servidor, así que este panel no guarda solo:
-    arma el archivo <code>eventos.json</code> y tú lo pegas en GitHub. Nada se pierde si cierras
-    la página — el trabajo queda guardado en tu navegador hasta que lo publiques.
+  <div class="barra">
+    <span class="marca"><span class="zh">学习</span> Panel del equipo</span>
+    <span class="quien" id="quien"></span>
+    <span class="hueco">
+      <!-- Aquí va el panel de Instagram cuando exista: un campo para pegar el
+           enlace de la publicación, que llama al Worker y rellena el
+           formulario de Decap con inyectar(). -->
+      <button id="salir" class="secundario" type="button">Salir</button>
+    </span>
+  </div>
+  <div class="marco">
+    <iframe id="cms" title="Editor de contenidos"></iframe>
   </div>
 </div>
 
-<div class="wrap cols">
-
-  <!-- ============ FORMULARIO ============ -->
-  <section class="panel">
-    <h2><span class="zh">新增</span> <span id="form-titulo">Nueva actividad</span></h2>
-    <p class="sub" id="form-sub">Completa los datos y presiona agregar.</p>
-
-    <form id="form">
-      <label>
-        <span class="lb">Título</span>
-        <input id="f-titulo" required placeholder="Taller de caligrafía china">
-      </label>
-
-      <div class="par">
-        <label><span class="lb">Fecha</span><input id="f-fecha" type="date" required></label>
-        <label><span class="lb">Hora</span><input id="f-hora" type="time" required value="15:00"></label>
-      </div>
-
-      <label>
-        <span class="lb">Lugar</span>
-        <input id="f-lugar" required placeholder="Campus San Joaquín UC">
-      </label>
-
-      <label>
-        <span class="lb">Detalle</span>
-        <textarea id="f-detalle" placeholder="Quién lo imparte, con qué organización, notas para asistentes…"></textarea>
-        <span class="hint">Art. 6.3: debe estar presente el encargado de la actividad o al menos dos miembros del club.</span>
-      </label>
-
-      <div class="par">
-        <label>
-          <span class="lb">Tipo · Art. 2.1</span>
-          <select id="f-tipo">
-            <option value="taller">Taller</option>
-            <option value="charla">Charla</option>
-            <option value="congreso">Congreso</option>
-            <option value="almuerzo">Almuerzo</option>
-            <option value="festival">Festival</option>
-            <option value="stand">Stand</option>
-            <option value="jornada">Jornada de investigación</option>
-            <option value="voluntariado">Voluntariado</option>
-          </select>
-        </label>
-        <label>
-          <span class="lb">Comisión</span>
-          <select id="f-comision">
-            <option value="wailian">外联 Wailian — actividades</option>
-            <option value="xuexi">学习 Xuexi — académicas</option>
-            <option value="xinxi">信息 Xinxi — difusión</option>
-          </select>
-        </label>
-      </div>
-      <p class="hint" style="margin:-6px 0 13px;font-size:.7rem;color:var(--cream-faint)" id="hint-com"></p>
-
-      <div class="par">
-        <label>
-          <span class="lb">Área académica</span>
-          <select id="f-area">
-            <option value="">— sin área —</option>
-            <option>Economía y Negocios</option>
-            <option>Cultura y Lengua</option>
-            <option>RR.II. y Diplomacia</option>
-            <option>Políticas Públicas y Gobernanza</option>
-            <option>Ciencia y Tecnología</option>
-          </select>
-        </label>
-        <label>
-          <span class="lb">Ciclo · Art. 6.3</span>
-          <select id="f-ciclo">
-            <option value="segundo-semestre">2° semestre · oct–nov</option>
-            <option value="primer-semestre">1er semestre · may–jun</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="par">
-        <label>
-          <span class="lb">Estado</span>
-          <select id="f-estado">
-            <option value="abierto">Inscripción abierta</option>
-            <option value="pronto">Próximamente</option>
-            <option value="lleno">Cupos llenos</option>
-            <option value="online">Online · abierto</option>
-            <option value="realizado">Realizado</option>
-          </select>
-        </label>
-        <label>
-          <span class="lb">Cupos</span>
-          <input id="f-cupos" type="number" min="0" value="0">
-          <span class="hint">0 = sin límite</span>
-        </label>
-      </div>
-
-      <div class="par">
-        <label>
-          <span class="lb">Carácter chino</span>
-          <input id="f-hanzi" maxlength="2" placeholder="书">
-          <span class="hint">Se muestra si no hay foto</span>
-        </label>
-        <label>
-          <span class="lb">Foto</span>
-          <input id="f-imagen" placeholder="cocina.jpg">
-          <span class="hint">Archivo en <code>assets/</code></span>
-        </label>
-      </div>
-
-      <button class="btn b-sello" type="submit" id="f-enviar">
-        <span class="zh">加入</span> <span id="f-enviar-txt">Agregar actividad</span>
-      </button>
-      <button class="btn b-ghost" type="button" id="f-cancelar" hidden style="width:100%;margin-top:9px">
-        Cancelar edición
-      </button>
-    </form>
-  </section>
-
-  <!-- ============ LISTA + PUBLICACIÓN ============ -->
-  <section>
-    <div class="panel">
-      <h2><span class="zh">活动</span> Actividades en la agenda</h2>
-      <p class="sub" id="contador">—</p>
-      <div class="lista" id="lista"></div>
-    </div>
-
-    <div class="panel salida">
-      <h2><span class="zh">发布</span> Publicar en el sitio</h2>
-      <p class="sub">Este es el contenido que debe quedar en <code>data/eventos.json</code>.</p>
-      <textarea id="json" readonly aria-label="Contenido del archivo eventos.json"></textarea>
-      <div class="acciones">
-        <button class="btn b-jade" id="copiar"><span class="zh">复制</span> Copiar</button>
-        <button class="btn b-gold" id="descargar">Descargar archivo</button>
-        <button class="btn b-ghost" id="restaurar">Restaurar original</button>
-      </div>
-      <div id="aviso"></div>
-
-      <ol class="pasos">
-        <li>Presiona <b>Copiar</b> aquí arriba.</li>
-        <li>Abre <a href="https://github.com/qgerman2/xuexi-web-dev/edit/main/data/eventos.json"
-            target="_blank" rel="noopener">eventos.json en GitHub</a>.</li>
-        <li>Selecciona todo lo que hay (<b>Cmd + A</b>) y pega encima (<b>Cmd + V</b>).</li>
-        <li>Abajo escribe qué cambiaste y presiona <b>Commit changes</b>.</li>
-        <li>El sitio se actualiza solo en 1 o 2 minutos.</li>
-      </ol>
-    </div>
-  </section>
-</div>
-
-<footer class="wrap">
-  Xuexi Club UC · Panel interno. Los cambios no se publican hasta que subes el archivo a GitHub.
-</footer>
-
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="assets/nav.js?v=28"></script>
+<script src="assets/firebase-config.js?v=28"></script>
 <script>
+/* Panel del equipo · Xuexi Club UC
+ *
+ * Esta página es el marco: comprueba quién eres y mete el editor (Decap, en
+ * /admin/) dentro de un iframe. El editor va en un iframe y no en la misma
+ * página para poder poner cosas al lado —el panel de Instagram— sin pelearse
+ * con el diseño de Decap.
+ *
+ * Como ambas páginas están en el MISMO origen, la sesión de Firebase y el
+ * localStorage se comparten: /admin/ se encuentra la sesión ya hecha y arranca
+ * sin pedir nada. Y, por lo mismo, desde aquí se puede tocar el DOM de dentro
+ * del iframe. Ver inyectar() más abajo.
+ */
 (function(){
   'use strict';
 
-  var TIPOS = {taller:'Taller', charla:'Charla', congreso:'Congreso', almuerzo:'Almuerzo',
-    festival:'Festival', stand:'Stand', jornada:'Jornada', voluntariado:'Voluntariado'};
-  var COM = {wailian:{zh:'外联',n:'Wailian'}, xuexi:{zh:'学习',n:'Xuexi'}, xinxi:{zh:'信息',n:'Xinxi'}};
-  var EST = {abierto:'Inscripción abierta', pronto:'Próximamente', lleno:'Cupos llenos',
-    online:'Online', realizado:'Realizado'};
-  var HINT_COM = {
-    wailian:'Art. 6.3 — Wailian gestiona talleres, charlas, almuerzos, festivales y stands.',
-    xuexi:'Art. 5 — Xuexi organiza congresos y jornadas con fin académico.',
-    xinxi:'Art. 7 — Xinxi difunde las actividades de las otras comisiones.'
-  };
-  var MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  var CLAVE = 'xuexi_agenda_borrador';
+  var ROL_REQUERIDO = 'admin';
+  var EDITOR = 'admin/';
 
-  var base = null;      // archivo original tal como vino del repo
-  var eventos = [];
-  var editando = -1;
+  var puerta = document.getElementById('puerta'),
+      taller = document.getElementById('taller'),
+      form   = document.getElementById('form'),
+      sub    = document.getElementById('sub'),
+      msj    = document.getElementById('msj'),
+      btn    = document.getElementById('entrar'),
+      quien  = document.getElementById('quien'),
+      marco  = document.getElementById('cms');
 
-  var $ = function(id){ return document.getElementById(id); };
-
-  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-
-  function fecha(iso){ var p=String(iso).split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
-
-  function esPasado(e){ var h=new Date(); h.setHours(0,0,0,0); return fecha(e.fecha) < h; }
-
-  function avisar(msg, tipo){
-    $('aviso').innerHTML = '<p class="aviso ' + (tipo||'ok') + '">' + esc(msg) + '</p>';
-    setTimeout(function(){ $('aviso').innerHTML = ''; }, 4000);
+  function decir(texto, clase){
+    msj.textContent = texto || '';
+    msj.className = 'msj ' + (clase || 'error');
+    msj.style.display = texto ? 'block' : 'none';
   }
 
-  function guardarBorrador(){
-    try { localStorage.setItem(CLAVE, JSON.stringify(eventos)); } catch(e){}
+  function pedirCredenciales(texto){
+    sub.textContent = 'Entra con tu cuenta de miembro.';
+    form.hidden = false;
+    document.getElementById('salir-puerta').hidden = true;
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+    decir(texto);
   }
 
-  function ordenar(){
-    eventos.sort(function(a,b){ return fecha(a.fecha) - fecha(b.fecha); });
+  function abrirTaller(perfil, user){
+    quien.textContent = (perfil.nombre || user.email) + ' · coordinación';
+    puerta.classList.add('oculto');
+    taller.classList.add('visible');
+    // /admin/ se encarga de sembrar la sesión y cargar Decap.
+    if (!marco.src) marco.src = EDITOR;
   }
 
-  function pintar(){
-    ordenar();
-    var cont = $('lista');
-    if (!eventos.length){
-      cont.innerHTML = '<p class="vacio">Todavía no hay actividades. Agrega la primera con el formulario.</p>';
-    } else {
-      cont.innerHTML = eventos.map(function(e, i){
-        var d = fecha(e.fecha), c = COM[e.comision];
-        return '<article class="fila' + (esPasado(e)?' pasado':'') + '">' +
-          '<div class="fch"><b>' + d.getDate() + '</b><span>' + MESES[d.getMonth()] + '</span></div>' +
-          '<div class="cnt">' +
-            '<h3>' + esc(e.titulo) + '</h3>' +
-            '<p class="m">' + esc(e.lugar) + ' · ' + esc(e.hora) + '</p>' +
-            '<div class="badges">' +
-              '<span class="bdg">' + esc(TIPOS[e.tipo]||e.tipo) + '</span>' +
-              (c ? '<span class="bdg com"><span class="zh">'+c.zh+'</span> '+c.n+'</span>' : '') +
-              '<span class="bdg est-' + esc(e.estado) + '">' + esc(EST[e.estado]||e.estado) + '</span>' +
-              (e.cupos > 0 ? '<span class="bdg">' + e.cupos + ' cupos</span>' : '') +
-            '</div>' +
-          '</div>' +
-          '<div class="acc">' +
-            '<button class="mini" data-ed="' + i + '">Editar</button>' +
-            '<button class="mini del" data-bo="' + i + '">Borrar</button>' +
-          '</div></article>';
-      }).join('');
-    }
-    var prox = eventos.filter(function(e){ return !esPasado(e); }).length;
-    $('contador').textContent = eventos.length + ' en total · ' + prox + ' por venir';
-    volcarJSON();
-    guardarBorrador();
+  if (typeof firebase === 'undefined' || !firebase.apps.length){
+    sub.textContent = '';
+    decir('El acceso no está configurado: revisa assets/firebase-config.js.');
+    return;
   }
 
-  function volcarJSON(){
-    var salida = JSON.parse(JSON.stringify(base || {}));
-    salida.eventos = eventos;
-    $('json').value = JSON.stringify(salida, null, 2);
-  }
+  firebase.auth().onAuthStateChanged(function(user){
+    if (!user){ pedirCredenciales(); return; }
 
-  function limpiarForm(){
-    $('form').reset();
-    $('f-hora').value = '15:00';
-    $('f-cupos').value = 0;
-    editando = -1;
-    $('form-titulo').textContent = 'Nueva actividad';
-    $('form-sub').textContent = 'Completa los datos y presiona agregar.';
-    $('f-enviar-txt').textContent = 'Agregar actividad';
-    $('f-cancelar').hidden = true;
-    actualizarHint();
-  }
+    sub.textContent = 'Comprobando permisos…';
+    form.hidden = true;
 
-  function actualizarHint(){
-    $('hint-com').textContent = HINT_COM[$('f-comision').value] || '';
-  }
-
-  $('f-comision').addEventListener('change', actualizarHint);
-
-  $('form').addEventListener('submit', function(ev){
-    ev.preventDefault();
-    var e = {
-      titulo:  $('f-titulo').value.trim(),
-      fecha:   $('f-fecha').value,
-      hora:    $('f-hora').value,
-      lugar:   $('f-lugar').value.trim(),
-      detalle: $('f-detalle').value.trim(),
-      tipo:    $('f-tipo').value,
-      comision:$('f-comision').value,
-      ciclo:   $('f-ciclo').value,
-      areaEtiqueta: $('f-area').value,
-      estado:  $('f-estado').value,
-      hanzi:   $('f-hanzi').value.trim(),
-      cupos:   parseInt($('f-cupos').value, 10) || 0,
-      imagen:  $('f-imagen').value.trim()
-    };
-    if (!e.titulo || !e.fecha || !e.lugar){
-      avisar('Faltan datos: título, fecha y lugar son obligatorios.', 'err');
-      return;
-    }
-    if (editando >= 0){ eventos[editando] = e; avisar('Actividad actualizada.'); }
-    else { eventos.push(e); avisar('Actividad agregada. Recuerda publicarla en GitHub.'); }
-    limpiarForm();
-    pintar();
-  });
-
-  $('f-cancelar').addEventListener('click', limpiarForm);
-
-  $('lista').addEventListener('click', function(ev){
-    var b = ev.target.closest('button');
-    if (!b) return;
-
-    if (b.dataset.bo !== undefined){
-      var i = +b.dataset.bo;
-      if (confirm('¿Borrar "' + eventos[i].titulo + '" de la agenda?')){
-        eventos.splice(i, 1);
-        if (editando === i) limpiarForm();
-        pintar();
-        avisar('Actividad borrada.');
-      }
-      return;
-    }
-
-    if (b.dataset.ed !== undefined){
-      var j = +b.dataset.ed, e = eventos[j];
-      $('f-titulo').value = e.titulo || '';
-      $('f-fecha').value  = e.fecha || '';
-      $('f-hora').value   = e.hora || '';
-      $('f-lugar').value  = e.lugar || '';
-      $('f-detalle').value= e.detalle || '';
-      $('f-tipo').value   = e.tipo || 'taller';
-      $('f-comision').value = e.comision || 'wailian';
-      $('f-ciclo').value  = e.ciclo || 'segundo-semestre';
-      $('f-area').value   = e.areaEtiqueta || '';
-      $('f-estado').value = e.estado || 'abierto';
-      $('f-hanzi').value  = e.hanzi || '';
-      $('f-cupos').value  = e.cupos || 0;
-      $('f-imagen').value = e.imagen || '';
-      editando = j;
-      $('form-titulo').textContent = 'Editando actividad';
-      $('form-sub').textContent = e.titulo;
-      $('f-enviar-txt').textContent = 'Guardar cambios';
-      $('f-cancelar').hidden = false;
-      actualizarHint();
-      window.scrollTo({top:0, behavior:'smooth'});
-    }
-  });
-
-  $('copiar').addEventListener('click', function(){
-    var ta = $('json');
-    if (navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(ta.value)
-        .then(function(){ avisar('Copiado. Ahora pégalo en GitHub.'); })
-        .catch(function(){ ta.select(); document.execCommand('copy'); avisar('Copiado.'); });
-    } else {
-      ta.select(); document.execCommand('copy'); avisar('Copiado.');
-    }
-  });
-
-  $('descargar').addEventListener('click', function(){
-    var blob = new Blob([$('json').value], {type:'application/json'});
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'eventos.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
-    avisar('Archivo descargado.');
-  });
-
-  $('restaurar').addEventListener('click', function(){
-    if (!confirm('Esto descarta tus cambios y vuelve a la agenda publicada. ¿Seguir?')) return;
-    try { localStorage.removeItem(CLAVE); } catch(e){}
-    cargar(true);
-  });
-
-  function cargar(forzarOriginal){
-    fetch('data/eventos.json', {cache:'no-cache'})
-      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-      .then(function(d){
-        base = d;
-        var borrador = null;
-        if (!forzarOriginal){
-          try { borrador = JSON.parse(localStorage.getItem(CLAVE)); } catch(e){}
+    firebase.firestore().collection('miembros').doc(user.uid).get()
+      .then(function(doc){
+        var perfil = doc.exists ? doc.data() : null;
+        if (!perfil || perfil.rol !== ROL_REQUERIDO){
+          sub.textContent = '';
+          decir('Tu cuenta no tiene permisos de coordinación.', 'aviso');
+          document.getElementById('salir-puerta').hidden = false;
+          return;
         }
-        if (borrador && borrador.length){
-          eventos = borrador;
-          avisar('Recuperamos tus cambios sin publicar.');
-        } else {
-          eventos = (d.eventos || []).slice();
-        }
-        limpiarForm();
-        pintar();
+        abrirTaller(perfil, user);
       })
-      .catch(function(err){
-        $('lista').innerHTML = '<p class="vacio">No pudimos cargar la agenda.<br>' +
-          'Si abriste este archivo con doble clic, ábrelo con un servidor local ' +
-          '(<code>python3 -m http.server 8000</code>) o desde el sitio publicado.</p>';
-        console.error(err);
+      .catch(function(e){
+        sub.textContent = '';
+        decir('No se pudo comprobar tu perfil: ' + (e.message || e));
+        document.getElementById('salir-puerta').hidden = false;
       });
+  });
+
+  form.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    decir('');
+    btn.disabled = true;
+    btn.textContent = 'Verificando…';
+    firebase.auth().signInWithEmailAndPassword(
+      document.getElementById('correo').value.trim(),
+      document.getElementById('clave').value
+    ).catch(function(e){
+      pedirCredenciales(e.code === 'auth/invalid-credential'
+        ? 'Correo o contraseña incorrectos.'
+        : (e.message || 'No se pudo entrar.'));
+    });
+  });
+
+  function cerrar(){
+    try { localStorage.removeItem('decap-cms-user'); } catch(e){}
+    firebase.auth().signOut().then(function(){ location.reload(); });
+  }
+  document.getElementById('salir').addEventListener('click', cerrar);
+  document.getElementById('salir-puerta').addEventListener('click', cerrar);
+
+  // ─────────────── Rellenar el formulario de Decap ───────────────
+  //
+  // Los campos de Decap son componentes de React controlados: poner .value a
+  // mano no sirve, React lo pisa en el siguiente dibujado. Hay que usar el
+  // setter nativo y lanzar los eventos para que React crea que alguien tecleó.
+  //
+  // Se busca por el TEXTO de la etiqueta porque esos textos salen de nuestro
+  // admin/config.yml ("Título", "Detalle", "Lugar"…), así que son lo más
+  // estable que hay frente a actualizaciones de Decap. Aun así, esto depende
+  // del HTML de Decap: FIJA LA VERSIÓN en admin/index.html antes de confiar en
+  // ello, o una actualización silenciosa lo romperá.
+
+  function doc(){
+    try { return marco.contentDocument; } catch(e){ return null; }
   }
 
-  cargar(false);
+  function campoPorEtiqueta(d, texto){
+    var etiquetas = [].slice.call(d.querySelectorAll('label'));
+    var l = etiquetas.filter(function(x){
+      return x.textContent.trim().toLowerCase().indexOf(texto.toLowerCase()) === 0;
+    })[0];
+    if (!l) return null;
+    var id = l.getAttribute('for');
+    return id ? d.getElementById(id)
+              : l.parentElement.querySelector('input,textarea,select');
+  }
+
+  function escribir(el, valor){
+    if (!el) return false;
+    var proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype
+              : el instanceof HTMLSelectElement   ? HTMLSelectElement.prototype
+              :                                     HTMLInputElement.prototype;
+    Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, valor);
+    el.dispatchEvent(new Event('input',  { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  }
+
+  // inyectar({ 'Título': '…', 'Detalle': '…' }) → nº de campos rellenados.
+  function inyectar(valores){
+    var d = doc();
+    if (!d) { console.warn('El editor todavía no está listo.'); return 0; }
+    var n = 0;
+    Object.keys(valores).forEach(function(etiqueta){
+      if (escribir(campoPorEtiqueta(d, etiqueta), valores[etiqueta])) n++;
+      else console.warn('No encontré el campo:', etiqueta);
+    });
+    return n;
+  }
+
+  // Espera a que aparezca un campo antes de rellenar: tras navegar dentro de
+  // Decap el formulario tarda en montarse.
+  function cuandoHayaFormulario(etiqueta, limiteMs){
+    var fin = Date.now() + (limiteMs || 10000);
+    return new Promise(function(listo, falla){
+      (function mirar(){
+        var d = doc();
+        if (d && campoPorEtiqueta(d, etiqueta)) return listo(true);
+        if (Date.now() > fin) return falla(new Error('No apareció el campo ' + etiqueta));
+        setTimeout(mirar, 250);
+      })();
+    });
+  }
+
+  // Lo dejamos a mano para el panel de Instagram y para probar desde la consola.
+  window.PanelXuexi = {
+    inyectar: inyectar,
+    cuandoHayaFormulario: cuandoHayaFormulario,
+    documentoEditor: doc
+  };
 })();
 </script>
 </body>
