@@ -5,106 +5,8 @@
 <base href="../../">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/site.css?v=29">
-<style>
-/* Vista de actividad: los colores y la tipografía vienen del sistema del sitio. */
-.event-page{padding:clamp(28px,5vw,64px) 0 clamp(56px,8vw,100px)}
-.event-page .wrap-event-detail{max-width:var(--maxw)}
-.event-breadcrumb{display:flex;align-items:center;flex-wrap:wrap;gap:10px;font-size:.72rem;
-  color:var(--cream-dim);margin-bottom:30px}
-.event-breadcrumb a{color:var(--gold)}
-.event-breadcrumb a:hover{text-decoration:underline;text-underline-offset:4px}
-.event-breadcrumb [aria-current]{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65ch}
-.event-overview{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:32px;
-  align-items:start;margin-bottom:44px}
-.event-heading{min-width:0;margin:0;padding:clamp(22px,3vw,36px);border:1px solid var(--line);
-  border-top:3px solid var(--gold);border-radius:var(--r);background:var(--card)}
-.event-tags{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px}
-.event-type{font-size:.67rem;letter-spacing:.15em;text-transform:uppercase;font-weight:600;
-  border:1px solid var(--gold-deep);color:var(--gold);padding:4px 11px;border-radius:var(--r)}
-.event-tags .estado{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;
-  padding:4px 11px;border:1px solid var(--line);border-radius:var(--r)}
-.event-heading h1{font-family:var(--serif);font-size:clamp(2rem,3.4vw,3rem);line-height:1.12;
-  overflow-wrap:anywhere;text-wrap:balance}
-.event-meta{display:grid;gap:0;margin-top:28px;font-size:.9rem}
-.event-meta-item{display:flex;align-items:flex-start;gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}
-.event-meta svg{width:19px;height:19px;flex:none;color:var(--gold);margin-top:4px}
-.event-meta-label{display:block;font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;
-  color:var(--cream-dim);margin-bottom:4px}
-.event-actions{display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin-top:26px}
-.event-actions .btn{font-size:.73rem;padding:11px 18px}
-.event-instagram{color:var(--gold);font-size:.8rem;text-underline-offset:4px}
-.event-instagram:hover{text-decoration:underline}
-.event-cover{position:static;margin:0;width:100%;border:1px solid var(--line);
-  border-radius:var(--r);overflow:hidden;background:var(--ink)}
-.event-cover img{display:block;width:100%;height:auto;object-fit:contain}
-.event-cover--empty{aspect-ratio:4/5;display:grid;place-items:center}
-.event-cover--empty .glyph{font-size:6rem;color:var(--gold);opacity:.4}
-.event-information{max-width:820px;margin:0 auto 40px;padding:0 20px;border:0;background:none}
-.event-description{font-size:1.05rem;line-height:1.9;overflow-wrap:anywhere;color:var(--cream)}
-.event-description p{margin:0 0 1.6em}
-.event-description p:last-child{margin-bottom:0}
-.event-followup{margin-top:40px;margin-bottom:52px}
-.event-credit{font-size:.76rem;color:var(--cream-dim);margin-top:26px}
-.event-section-heading{display:flex;align-items:baseline;gap:12px;font-family:var(--serif);
-  font-size:clamp(1.25rem,2.5vw,1.6rem);line-height:1.3;margin:0 0 25px}
-.event-section-heading .zh{color:var(--gold);font-size:.9em;flex:none}
-.event-page .gallery-section{padding-top:34px;border-top:1px solid var(--line);scroll-margin-top:90px}
-.event-page .gallery-head{margin-bottom:22px}
-.event-page .gallery-head h2{margin:0}
-.event-page .ev-stage-box{border-radius:var(--r);box-shadow:none;background:var(--ink)}
-.event-page .ev-stage-screen{max-height:560px;aspect-ratio:16/9}
-.event-page .ev-stage-img{object-fit:contain}
-.event-page .ev-stage-screen:hover .ev-stage-img{transform:none;filter:none}
-.event-page .ev-stage-hanzi{display:none}
-.event-page .ev-stage-btn-zoom{border-radius:var(--r);font-family:var(--sans)}
-.event-page .ev-stage-nav{border-radius:var(--r)}
-.event-page .ev-thumb-item{border-radius:var(--r);flex-basis:100px}
-.event-thumb-open{display:block;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:pointer}
-.event-page .ev-thumb-item.active{box-shadow:none;transform:none}
-.event-gallery-empty{padding:28px;border:1px dashed var(--line);color:var(--cream-dim);font-size:.88rem}
-.event-page .gal-nota{margin-top:18px}
-.event-related{margin-top:54px;padding:34px 0 0;border-top:1px solid var(--line)}
-.event-related-head{display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap;margin-bottom:24px}
-.event-related-head h2{margin:0}
-.event-related-head>a{color:var(--gold);font-size:.75rem}
-.event-related-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
-.event-related-card{display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);
-  border-radius:var(--r);background:var(--card);transition:border-color .2s}
-.event-related-card:hover{border-color:var(--gold)}
-.event-related-media{height:180px;background:var(--ink);overflow:hidden;display:grid;place-items:center}
-.event-related-media img{width:100%;height:100%;object-fit:contain}
-.event-related-media .zh{font-size:3rem;color:var(--gold);opacity:.4}
-.event-related-copy{display:flex;flex-direction:column;align-items:start;gap:12px;padding:20px;flex:1}
-.event-related-copy small{font-size:.65rem;color:var(--gold);letter-spacing:.08em;text-transform:uppercase}
-.event-related-copy h3{font-family:var(--serif);font-size:1.2rem;line-height:1.25}
-.event-related-copy time{font-size:.75rem;color:var(--cream-dim)}
-.event-related-copy>span{margin-top:auto;padding-top:8px;color:var(--gold);font-size:.75rem}
-@media(max-width:820px){
-  .event-overview{grid-template-columns:minmax(0,1fr);gap:22px}
-  .event-cover{max-width:540px;justify-self:center}
-  .event-related-grid{gap:12px}
-  .event-related-media{height:135px}
-  .event-related-copy{padding:14px}
-}
-@media(max-width:540px){
-  .event-breadcrumb{margin-bottom:22px;font-size:.65rem}
-  .event-breadcrumb [aria-current]{max-width:30ch}
-  .event-heading h1{font-size:2.2rem}
-  .event-information{padding:0}
-  .event-description{font-size:1rem;line-height:1.85}
-  .event-meta{font-size:.85rem}
-  .event-page .ev-stage-screen{aspect-ratio:4/3}
-  .event-page .ev-stage-caption{padding:30px 14px 12px;gap:6px}
-  .event-page .ev-stage-info h4{font-size:.85rem}
-  .event-page .ev-stage-count{font-size:.6rem}
-  .event-page .ev-stage-btn-zoom{font-size:.65rem;padding:5px 9px}
-  .event-page .ev-stage-nav{width:32px;height:32px}
-  .event-related-grid{grid-template-columns:minmax(0,1fr)}
-  .event-related-card{display:grid;grid-template-columns:110px minmax(0,1fr)}
-  .event-related-media{height:100%;min-height:150px}
-}
-</style>
+<link rel="stylesheet" href="assets/site.css?v=30">
+<link rel="stylesheet" href="assets/evento.css?v=30">
 <title>Taller de Caligrafía y Charla Budista · Xuexi Club UC</title>
 <meta name="description" content="En colaboración con la Organización Budista Fo Guang Shan.">
 <link rel="canonical" href="https://qgerman2.github.io/xuexi-web-dev/evento/caligrafia-budista/">
@@ -210,7 +112,7 @@
   </div>
   <div class="wrap legal">
     <span>© <span id="anio"></span> Xuexi Club UC · Campus San Joaquín</span>
-    <span>Hecho por la Comisión Xinxi 信息 · <a href="admin/" class="legal-admin">Panel del equipo</a></span>
+    <span>Hecho por la Comisión Xinxi 信息 · <a href="admin/" class="legal-admin">Editor</a></span>
   </div>
 </footer>
 
@@ -218,68 +120,17 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-<script src="assets/firebase-config.js?v=29"></script>
-<script src="assets/nav.js?v=29"></script>
-<script src="assets/auth.js?v=29"></script>
-<script src="assets/datos.js?v=29"></script>
+<script src="assets/firebase-config.js?v=30"></script>
+<script src="assets/nav.js?v=30"></script>
+<script src="assets/auth.js?v=30"></script>
+<script src="assets/datos.js?v=30"></script>
+<script src="assets/evento-vista.js?v=30"></script>
 <script>
 (function(){
   document.getElementById('anio').textContent = new Date().getFullYear();
 
-  var MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  var DIAS  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  var ESTADOS = {
-    abierto  :{txt:'Inscripción abierta', cls:'e-abierto'},
-    pronto   :{txt:'Próximamente',        cls:'e-pronto'},
-    lleno    :{txt:'Cupos llenos',        cls:'e-lleno'},
-    online   :{txt:'Inscripción abierta', cls:'e-online'},
-    realizado:{txt:'Realizado',           cls:'e-lleno'}
-  };
-  var TIPOS = {
-    taller:'Taller', charla:'Charla', congreso:'Congreso', almuerzo:'Almuerzo',
-    festival:'Festival', stand:'Stand', jornada:'Jornada de investigación',
-    voluntariado:'Voluntariado'
-  };
-  var COMISIONES = {
-    wailian:{zh:'外联', nom:'Wailian'},
-    xuexi  :{zh:'学习', nom:'Xuexi'},
-    xinxi  :{zh:'信息', nom:'Xinxi'}
-  };
-
-  var PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>';
-  var CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>';
-
-  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-
-  function ruta(valor, carpeta){
-    var v = String(valor || '').trim();
-    if (!v) return '';
-    if (/^(https?:)?\/\//.test(v) || /^data:image/.test(v)) return v;
-    return v.indexOf('/') !== -1 ? v.replace(/^\//, '') : carpeta + v;
-  }
-
-  function comoArchivo(f){
-    if (!f) return '';
-    if (typeof f === 'string') return f.trim();
-    if (typeof f === 'object' && f.foto) return String(f.foto).trim();
-    return '';
-  }
-
-  function fecha(iso){
-    if (!iso) return new Date();
-    var partes = iso.split('-');
-    if (partes.length < 3) return new Date(iso);
-    return new Date(parseInt(partes[0],10), parseInt(partes[1],10)-1, parseInt(partes[2],10));
-  }
-
-  function esPasado(ev){
-    if (!ev || !ev.fecha) return false;
-    var d = fecha(ev.fecha);
-    d.setHours(23,59,59,999);
-    return d < new Date();
-  }
-
+  var esc = window.XuexiEventoVista.esc;
+  var ruta = window.XuexiEventoVista.ruta;
   var lbModal = document.getElementById('lightbox');
   var lbImg = document.getElementById('lb-img');
   var lbCap = document.getElementById('lb-caption');
@@ -362,122 +213,7 @@
     eventoActual = ev;
     document.title = ev.titulo + ' · Xuexi Club UC';
 
-    var d = fecha(ev.fecha);
-    var est = esPasado(ev) ? {txt:'Ya realizado', cls:'e-lleno'} : (ESTADOS[ev.estado] || ESTADOS.pronto);
-    var com = COMISIONES[ev.comision];
-    var fechaConfirmada = ev.fecha && !isNaN(d.getTime());
-    var fechaTexto = fechaConfirmada
-      ? DIAS[d.getDay()] + ' ' + d.getDate() + ' de ' + MESES[d.getMonth()].toLowerCase() + ' de ' + d.getFullYear()
-      : 'Por confirmar';
-    var pasado = esPasado(ev) || ev.estado === 'realizado';
-    var inscripcionAbierta = !pasado && (ev.estado === 'abierto' || ev.estado === 'online');
-    var organizador = com ? 'Xuexi Club UC · Comisión ' + com.nom : 'Xuexi Club UC';
-    var enlaceInstagram = /^https:\/\/(www\.)?instagram\.com\//i.test(ev.instagram || '')
-      ? ev.instagram : '';
-
-    function icono(trazos){
-      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + trazos + '</svg>';
-    }
-    var RELOJ = icono('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>');
-    var mediaPortada = ev.imagen
-      ? '<img src="' + esc(ruta(ev.imagen, 'assets/')) + '" alt="' + esc(ev.titulo) + '" fetchpriority="high">'
-      : '<span class="glyph zh" aria-hidden="true">' + esc(ev.hanzi || '学') + '</span>';
-    var inscripcion = '';
-    try {
-      var urlInscripcion = new URL(ev.inscripcion || 'https://forms.gle/QGBvhXRK1Yc75obk8');
-      if (urlInscripcion.protocol === 'https:') inscripcion = urlInscripcion.href;
-    } catch(e){}
-    var accion = inscripcionAbierta && inscripcion
-      ? '<a href="' + esc(inscripcion) + '" target="_blank" rel="noopener noreferrer" class="btn btn-sello">Inscribirme <span aria-hidden="true">↗</span></a>' : '';
-    var horario = ev.hora ? ev.hora + (ev.horaFin ? '–' + ev.horaFin : '') + ' hrs.' : 'Horario por confirmar';
-    var lugar = ev.lugar || (ev.estado === 'online' ? 'En línea' : 'Lugar por confirmar');
-    function textoParrafos(texto){
-      return String(texto || '').trim().split(/\n\s*\n/).filter(Boolean).map(function(p){
-        return '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>';
-      }).join('');
-    }
-    var parrafos = textoParrafos(ev.detalle);
-    var parrafosFinales = textoParrafos(ev.detalleFinal);
-
-    var relacionados = evs.filter(function(otro){ return otro.id && otro.id !== ev.id; })
-      .sort(function(a, b){
-        var afinA = (a.comision && a.comision === ev.comision ? 2 : 0) + (a.tipo === ev.tipo ? 1 : 0);
-        var afinB = (b.comision && b.comision === ev.comision ? 2 : 0) + (b.tipo === ev.tipo ? 1 : 0);
-        if (afinA !== afinB) return afinB - afinA;
-        if (esPasado(a) !== esPasado(b)) return esPasado(a) ? 1 : -1;
-        return esPasado(a) ? String(b.fecha || '').localeCompare(a.fecha || '')
-          : String(a.fecha || '9999').localeCompare(b.fecha || '9999');
-      }).slice(0, 3);
-    var masActividades = relacionados.length ?
-      '<section class="event-related" aria-labelledby="otras-actividades">' +
-        '<div class="event-related-head"><h2 class="event-section-heading" id="otras-actividades"><span class="zh" aria-hidden="true">发现</span> Más actividades</h2>' +
-          '<a href="eventos.html">Explorar la agenda <span aria-hidden="true">↗</span></a></div>' +
-        '<div class="event-related-grid">' + relacionados.map(function(otro){
-          var f = fecha(otro.fecha);
-          return '<a class="event-related-card" href="evento/' + esc(encodeURIComponent(otro.id)) + '/">' +
-            '<div class="event-related-media">' + (otro.imagen
-              ? '<img src="' + esc(ruta(otro.imagen, 'assets/')) + '" alt="" loading="lazy">'
-              : '<span class="zh" aria-hidden="true">' + esc(otro.hanzi || '学') + '</span>') + '</div>' +
-            '<div class="event-related-copy"><small>' + esc(TIPOS[otro.tipo] || 'Actividad') + '</small>' +
-              '<h3>' + esc(otro.titulo) + '</h3>' +
-              (otro.fecha && !isNaN(f.getTime()) ? '<time datetime="' + esc(otro.fecha) + '">' + f.getDate() + ' de ' + MESES[f.getMonth()].toLowerCase() + '</time>' : '') +
-              '<span>Ver actividad <span aria-hidden="true">↗</span></span></div></a>';
-        }).join('') + '</div></section>' : '';
-
-    var html = '' +
-      '<nav class="event-breadcrumb" aria-label="Ruta de navegación"><a href="eventos.html">← Agenda</a></nav>' +
-      '<div class="event-overview">' +
-        '<figure class="event-cover' + (!ev.imagen ? ' event-cover--empty' : '') + '">' + mediaPortada + '</figure>' +
-      '<header class="event-heading">' +
-        '<div class="event-tags"><span class="event-type">' + esc(TIPOS[ev.tipo] || 'Actividad') + '</span>' +
-          '<span class="estado ' + est.cls + '">' + esc(est.txt) + '</span></div>' +
-        '<h1>' + esc(ev.titulo) + '</h1>' +
-        '<div class="event-meta">' +
-          '<div class="event-meta-item">' + CAL + '<div><span class="event-meta-label">Fecha</span>' +
-            (fechaConfirmada ? '<time datetime="' + esc(ev.fecha) + '">' + esc(fechaTexto) + '</time>' : 'Por confirmar') + '</div></div>' +
-          '<div class="event-meta-item">' + RELOJ + '<div><span class="event-meta-label">Horario</span>' + esc(horario) + '</div></div>' +
-          '<div class="event-meta-item">' + PIN + '<div><span class="event-meta-label">Lugar</span>' + esc(lugar) + '</div></div>' +
-          (ev.cupos > 0 ? '<div class="event-meta-item"><div><span class="event-meta-label">Capacidad</span>' + esc(ev.cupos) + ' participantes</div></div>' : '') +
-        '</div>' +
-        '<div class="event-actions">' + accion +
-          (enlaceInstagram ? '<a class="event-instagram" href="' + esc(enlaceInstagram) + '" target="_blank" rel="noopener noreferrer">Ver en Instagram <span aria-hidden="true">↗</span></a>' : '') +
-          '<a class="btn btn-gold" id="editar-evento" href="admin.html?evento=' + esc(encodeURIComponent(ev.id)) + '" hidden>Editar evento <span aria-hidden="true">↗</span></a>' +
-        '</div>' +
-        '<p class="event-credit">' + esc(organizador) + '</p>' +
-      '</header></div>' +
-      (parrafos ? '<article class="event-information event-intro-text" aria-label="Descripción de la actividad"><div class="event-description">' + parrafos + '</div></article>' : '') +
-
-      '<div class="gallery-section" id="fotos-evento">' +
-        '<div class="gallery-head">' +
-          '<h2 class="event-section-heading"><span class="zh" aria-hidden="true">相册</span> Galería de fotos</h2>' +
-          '<span class="gallery-counter" id="fotos-counter">GALERÍA</span>' +
-        '</div>' +
-
-        '<div class="ev-stage-box" id="ev-stage-box">' +
-          '<div class="ev-stage-screen">' +
-            '<img id="stage-img" class="ev-stage-img" alt="" role="button" tabindex="0" aria-label="Ampliar fotografía">' +
-            '<span class="ev-stage-hanzi zh" id="stage-hanzi">' + esc(ev.hanzi || '学') + '</span>' +
-            '<button type="button" class="ev-stage-nav ev-stage-prev" id="stage-prev" aria-label="Fotografía anterior">&#10094;</button>' +
-            '<button type="button" class="ev-stage-nav ev-stage-next" id="stage-next" aria-label="Fotografía siguiente">&#10095;</button>' +
-            '<div class="ev-stage-caption">' +
-              '<div class="ev-stage-info">' +
-                '<span class="ev-stage-count" id="stage-count">FOTOGRAFÍA 1 DE 1</span>' +
-                '<h4 id="stage-caption-title">' + esc(ev.titulo) + '</h4>' +
-              '</div>' +
-              '<button type="button" class="ev-stage-btn-zoom" id="stage-btn-zoom">Ampliar ↗</button>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-
-        '<p class="event-gallery-empty" id="fotos-vacio" hidden>Aún no hay fotografías de esta actividad.</p>' +
-        '<div class="ev-thumbs-track" id="gallery-thumbs-track"></div>' +
-        '<div id="admin-photo-container"></div>' +
-        '<p class="gal-nota">Las fotografías oficiales son publicadas por el equipo de coordinación.</p>' +
-      '</div>' +
-      (parrafosFinales ? '<article class="event-information event-followup" aria-label="Texto adicional"><div class="event-description">' + parrafosFinales + '</div></article>' : '') +
-      masActividades;
-
-    contenedor.innerHTML = html;
+    contenedor.innerHTML = window.XuexiEventoVista.renderizar(ev, evs);
     var stageImg = document.getElementById('stage-img');
     var stageCount = document.getElementById('stage-count');
     var stageTitle = document.getElementById('stage-caption-title');
@@ -519,12 +255,7 @@
     stageBtnZoom.addEventListener('click', function(){ abrirLightbox(currentStageIdx); });
 
     function cargarFotosCompletas(){
-      var fotosBase = [];
-      if (ev.galeria && Array.isArray(ev.galeria) && ev.galeria.length > 0){
-        fotosBase = ev.galeria.map(comoArchivo).filter(Boolean);
-      }
-      // La portada ya aparece arriba: no se repite como fotografía de la galería.
-      fotosBase = fotosBase.filter(function(f){ return f !== ev.imagen; });
+      var fotosBase = window.XuexiEventoVista.fotosDelEvento(ev);
 
       var listaInicial = fotosBase.map(function(f, idx){
         return {

@@ -163,7 +163,7 @@ function paginaLogin(entorno, origenes) {
   const html = `<!doctype html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Acceso al panel · Xuexi Club UC</title>
+<title>Acceso al editor · Xuexi Club UC</title>
 <style>
   body{margin:0;min-height:100vh;display:grid;place-items:center;background:#1a1010;
        color:#f4ece0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -181,7 +181,7 @@ function paginaLogin(entorno, origenes) {
 </style></head>
 <body>
 <form id="f">
-  <h1><span style="color:#D4AF61">学习</span> Panel de edición</h1>
+  <h1><span style="color:#D4AF61">学习</span> Editor</h1>
   <p class="sub">Entra con tu cuenta de miembro. Solo coordinación.</p>
   <div class="err" id="err"></div>
   <label for="e">Correo electrónico</label>

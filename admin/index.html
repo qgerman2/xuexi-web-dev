@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Panel de edición · Xuexi Club UC</title>
+<title>Editor · Xuexi Club UC</title>
 <link rel="icon" href="../assets/logo.png">
 <style>
   body{margin:0;font-family:"Avenir Next",system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -32,7 +32,7 @@
 
 <div id="puerta">
   <div class="caja">
-    <h1><span class="zh">学习</span> Panel de edición</h1>
+    <h1><span class="zh">学习</span> Editor</h1>
     <p class="sub" id="sub">Comprobando sesión…</p>
 
     <div class="msj" id="msj"></div>
@@ -58,7 +58,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-<script src="../assets/firebase-config.js?v=29"></script>
+<script src="../assets/firebase-config.js?v=30"></script>
+<script src="../assets/evento-vista.js?v=30"></script>
+<script src="preview-evento.js?v=1"></script>
 <script>
 /* Acceso al panel con la cuenta de Xuexi.
  *
@@ -166,8 +168,23 @@
     sub.textContent = '';
     decir('');
     puerta.classList.add('oculto');
+    // Registrar la vista antes de iniciar Decap evita la vista genérica inicial.
+    window.CMS_MANUAL_INIT = true;
     var s = document.createElement('script');
     s.src = DECAP_SRC;
+    s.onload = function(){
+      try {
+        window.registrarPreviewEvento(window.CMS);
+        window.CMS.init();
+      } catch(e){
+        puerta.classList.remove('oculto');
+        decir('No se pudo cargar el editor: ' + e.message);
+      }
+    };
+    s.onerror = function(){
+      puerta.classList.remove('oculto');
+      decir('No se pudo descargar el editor. Recarga la página para reintentar.');
+    };
     document.body.appendChild(s);
   }
 

@@ -65,6 +65,16 @@ collections:
         pattern: ['^[a-z0-9]+(-[a-z0-9]+)*$', 'Solo minúsculas, números y guiones. Ej. taller-caligrafia']
         hint: 'Es la dirección del evento (/evento/<id>/).'
       - { label: Título, name: titulo, widget: string }
+      - label: Estado
+        name: estado
+        widget: select
+        default: pronto
+        options:
+          - { label: Inscripción abierta, value: abierto }
+          - { label: Próximamente, value: pronto }
+          - { label: Cupos llenos, value: lleno }
+          - { label: Online · abierto, value: online }
+          - { label: Realizado, value: realizado }
       - label: Fecha
         name: fecha
         widget: datetime
@@ -92,7 +102,7 @@ collections:
         name: detalle
         widget: text
         required: false
-        hint: 'Texto que aparece antes del carrusel de fotos.'
+        hint: 'Texto antes del carrusel. Aquí se importa la descripción de Instagram.'
       - label: Texto después de la galería
         name: detalleFinal
         widget: text
@@ -120,16 +130,6 @@ collections:
           - { label: Stand, value: stand }
           - { label: Jornada de investigación, value: jornada }
           - { label: Voluntariado, value: voluntariado }
-      - label: Estado
-        name: estado
-        widget: select
-        default: pronto
-        options:
-          - { label: Inscripción abierta, value: abierto }
-          - { label: Próximamente, value: pronto }
-          - { label: Cupos llenos, value: lleno }
-          - { label: Online · abierto, value: online }
-          - { label: Realizado, value: realizado }
       - label: Comisión
         name: comision
         widget: select

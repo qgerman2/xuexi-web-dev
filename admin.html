@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Panel del equipo · Xuexi Club UC</title>
+<title>Editor · Xuexi Club UC</title>
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/site.css?v=29">
+<link rel="stylesheet" href="assets/site.css?v=30">
 <style>
   :root{
     --fondo:#1a1010; --panel:#241616; --linea:#4a3030;
@@ -143,7 +143,7 @@
 <div id="puerta">
   <div class="marco caja-marco">
    <div class="caja">
-    <h1><span class="zh">学习</span> Panel del equipo</h1>
+    <h1><span class="zh">学习</span> Editor</h1>
     <p class="sub" id="sub">Comprobando sesión…</p>
     <div class="msj" id="msj"></div>
 
@@ -169,7 +169,7 @@
 <!-- ────────────────────── Espacio de trabajo ────────────────────── -->
 <div id="taller">
   <div class="barra">
-    <span class="marca"><span class="zh">学习</span> Panel del equipo</span>
+    <span class="marca"><span class="zh">学习</span> Editor</span>
     <span class="quien" id="quien"></span>
     <span class="hueco">
       <button id="salir" class="secundario" type="button">Salir</button>
@@ -192,10 +192,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-<script src="assets/nav.js?v=29"></script>
-<script src="assets/firebase-config.js?v=29"></script>
+<script src="assets/nav.js?v=30"></script>
+<script src="assets/firebase-config.js?v=30"></script>
 <script>
-/* Panel del equipo · Xuexi Club UC
+/* Editor · Xuexi Club UC
  *
  * Esta página es el marco: comprueba quién eres y mete el editor (Decap, en
  * /admin/) dentro de un iframe. El editor va en un iframe y no en la misma
@@ -543,6 +543,7 @@
         throw new Error('Abre un evento de Agenda para usar esta publicación.');
       }
       var caption = (post.caption || '').trim();
+      // Detalle es el primer bloque de texto; detalleFinal se edita por separado.
       var valores = {
         'Detalle': caption,
         'Enlace de Instagram': urlSegura(post.permalink, true)
@@ -561,7 +562,7 @@
       igLista.querySelectorAll('.ig-elegir').forEach(function(b){
         b.setAttribute('aria-pressed', b === boton ? 'true' : 'false');
       });
-      estadoInstagram('Importado. Completa y guarda el evento.');
+      estadoInstagram('Descripción y fotos importadas.');
     } catch(e){
       estadoInstagram(e.message || 'No se pudo rellenar el evento.', true);
     } finally {
