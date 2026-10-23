@@ -6,7 +6,7 @@
 <title>Portal de Miembros · Xuexi Club UC</title>
 <meta name="description" content="Calendario interno de actividades y recursos para integrantes del Xuexi Club UC.">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/site.css?v=21">
+<link rel="stylesheet" href="assets/site.css?v=29">
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -67,7 +67,10 @@
           <p id="member-email" class="member-email-text">cargando información…</p>
         </div>
       </div>
-      <button type="button" class="btn btn-outline" id="btn-logout">Cerrar Sesión</button>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <a class="btn btn-gold" id="btn-panel" href="admin.html" hidden>Panel del equipo ↗</a>
+        <button type="button" class="btn btn-outline" id="btn-logout">Cerrar Sesión</button>
+      </div>
     </div>
 
     <!-- TARJETA DE ESTADO DE PAGO / MERCADO PAGO -->
@@ -177,11 +180,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-<script src="assets/firebase-config.js?v=28"></script>
-<script src="assets/nav.js?v=28"></script>
-<script src="assets/auth.js?v=28"></script>
-<script src="assets/coordinacion.js?v=28"></script>
-<script src="assets/cuotas.js?v=28"></script>
+<script src="assets/firebase-config.js?v=29"></script>
+<script src="assets/nav.js?v=29"></script>
+<script src="assets/auth.js?v=29"></script>
+<script src="assets/coordinacion.js?v=29"></script>
+<script src="assets/cuotas.js?v=29"></script>
 <script>
 (function(){
   document.getElementById('anio').textContent = new Date().getFullYear();
@@ -690,6 +693,7 @@
 
   // Proteger ruta y cargar datos
   window.XuexiAuth.onAuth(function(user){
+    document.getElementById('btn-panel').hidden = !user || user.rol !== 'admin';
     if (!user) {
       window.location.href = 'login.html';
       return;

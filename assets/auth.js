@@ -190,76 +190,146 @@
   // ──────────────────────── Fotos de eventos ────────────────────────
   // Permite a la coordinación subir fotos directamente desde la web.
 
-  function subirFotoEvento(eventoId, file, caption, onProgreso){
+  // Usa la misma configuración y el mismo conector autenticado que Decap.
+  // Las fotos y el JSON del evento se publican juntos en un único commit.
+  var backendFotos = null;
+  var fotosRepositorioSesion = [];
+
+  async function configuracionFotos(){
+    if (backendFotos) return backendFotos;
+    var r = await fetch(new URL('admin/config.yml', document.baseURI), { cache: 'no-store' });
+    if (!r.ok) throw new Error('No se pudo leer la configuración del panel.');
+    var texto = await r.text();
+    function campo(nombre){
+      var m = texto.match(new RegExp('^  ' + nombre + ':\\s*([^\\r\\n#]+)', 'm'));
+      return m ? m[1].trim().replace(/^['"]|['"]$/g, '') : '';
+    }
+    var api = campo('api_root'), repo = campo('repo'), branch = campo('branch');
+    if (!/^https:\/\//.test(api) || !/^[\w.-]+\/[\w.-]+$/.test(repo) || !branch){
+      throw new Error('La configuración del backend de fotos está incompleta.');
+    }
+    backendFotos = { api: api.replace(/\/$/, ''), repo: repo, branch: branch };
+    return backendFotos;
+  }
+
+  async function subirFotosEvento(eventoId, files, caption, onProgreso){
     if (!listo && !iniciar()) return noDisponible();
-    if (!auth.currentUser) return Promise.reject(new Error('Debes iniciar sesión como administrador.'));
-
-    var storage = null;
-    try { storage = firebase.storage(); } catch(e){}
-
-    var cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    var rutaStorage = 'eventos/' + (eventoId || 'general') + '/' + Date.now() + '_' + cleanName;
-
-    function guardarEnFirestore(url){
-      return db.collection('fotos_eventos').add({
-        eventoId: eventoId || '',
-        url: url,
-        caption: caption || '',
-        nombreArchivo: file.name,
-        rutaStorage: rutaStorage,
-        creadoPor: auth.currentUser.uid,
-        creadoPorEmail: auth.currentUser.email || '',
-        fecha: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(function(docRef){
-        return {
-          id: docRef.id,
-          eventoId: eventoId,
-          url: url,
-          caption: caption || '',
-          nombreArchivo: file.name
-        };
-      });
+    var usuario = auth.currentUser;
+    if (!usuario) throw new Error('Debes iniciar sesión como administrador.');
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(eventoId || '')){
+      throw new Error('Selecciona un evento publicado antes de subir fotos.');
     }
+    files = Array.from(files || []);
+    if (!files.length) throw new Error('Selecciona al menos una foto.');
+    files.forEach(function(file){
+      if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type)){
+        throw new Error('Usa imágenes JPG, PNG o WEBP: ' + (file?.name || 'archivo desconocido'));
+      }
+      if (!file.size || file.size > 20 * 1024 * 1024){
+        throw new Error('Cada imagen debe tener contenido y pesar como máximo 20 MB: ' + file.name);
+      }
+    });
+    var perfil = await db.collection('miembros').doc(usuario.uid).get();
+    if (!perfil.exists || perfil.data().rol !== 'admin'){
+      throw new Error('Solo administradores pueden subir fotos.');
+    }
+    var config = await configuracionFotos();
+    var base = '/repos/' + config.repo;
+    var rama = config.branch.split('/').map(encodeURIComponent).join('/');
+    var token = await usuario.getIdToken();
+    async function api(ruta, method, body){
+      if (!auth.currentUser || auth.currentUser.uid !== usuario.uid){
+        throw new Error('La sesión cambió. Vuelve a iniciar sesión.');
+      }
+      var respuesta = await fetch(config.api + base + ruta, {
+        method: method || 'GET', cache: 'no-store',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: AbortSignal.timeout(60000)
+      });
+      var datos = await respuesta.json();
+      if (!respuesta.ok){
+        var error = new Error(respuesta.status === 401 || respuesta.status === 403
+          ? 'Tu sesión no permite subir fotos. Vuelve a iniciar sesión.'
+          : 'No se pudo guardar la foto en el repositorio (' + respuesta.status + ').');
+        error.status = respuesta.status;
+        throw error;
+      }
+      return datos;
+    }
+    function progreso(pct){ if (typeof onProgreso === 'function') onProgreso(pct); }
+    var fotos = files.map(function(file){
+      var nombre = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-100);
+      return { file: file, ruta: 'assets/eventos/' + eventoId + '/' + Date.now().toString(36) + '-' +
+        crypto.randomUUID().slice(0, 8) + '-' + nombre, sha: null };
+    });
+    var rutaEvento = 'data/eventos/' + eventoId + '.json';
+    progreso(5);
 
-    if (storage) {
-      var ref = storage.ref(rutaStorage);
-      var uploadTask = ref.put(file);
-
-      return new Promise(function(resolve, reject){
-        uploadTask.on('state_changed',
-          function(snap){
-            if (typeof onProgreso === 'function' && snap.totalBytes > 0){
-              var pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-              onProgreso(pct);
-            }
-          },
-          function(err){
-            // Fallback a compresión Base64 / Data URL si storage tuviese error de CORS
+    for (var intento = 0; intento < 3; intento++){
+      var head = await api('/git/ref/heads/' + rama);
+      var commitBase = await api('/git/commits/' + head.object.sha);
+      var archivo;
+      try {
+        archivo = await api('/contents/' + rutaEvento + '?ref=' + encodeURIComponent(head.object.sha));
+      } catch(e){
+        if (e.status === 404) throw new Error('El evento todavía no está publicado en el repositorio.');
+        throw e;
+      }
+      var bytes = Uint8Array.from(atob(archivo.content.replace(/\s/g, '')), function(c){ return c.charCodeAt(0); });
+      var evento = JSON.parse(new TextDecoder().decode(bytes));
+      if (evento.id !== eventoId) throw new Error('El identificador del evento no coincide con su archivo.');
+      var galeria = Array.isArray(evento.galeria) ? evento.galeria : (evento.galeria ? [evento.galeria] : []);
+      evento.galeria = galeria.map(function(f){ return typeof f === 'string' ? f : f.foto; }).filter(Boolean);
+      for (var i = 0; i < fotos.length; i++){
+        var fotoArchivo = fotos[i];
+        if (evento.galeria.indexOf(fotoArchivo.ruta) === -1) evento.galeria.push(fotoArchivo.ruta);
+        if (!fotoArchivo.sha){
+          var contenido = await new Promise(function(resolve, reject){
             var reader = new FileReader();
-            reader.onload = function(e){
-              guardarEnFirestore(e.target.result).then(resolve).catch(reject);
-            };
-            reader.onerror = function(){ reject(err); };
-            reader.readAsDataURL(file);
-          },
-          function(){
-            uploadTask.snapshot.ref.getDownloadURL().then(function(url){
-              guardarEnFirestore(url).then(resolve).catch(reject);
-            }).catch(reject);
-          }
-        );
+            reader.onload = function(){ resolve(String(reader.result).split(',')[1]); };
+            reader.onerror = function(){ reject(new Error('No se pudo leer la imagen.')); };
+            reader.readAsDataURL(fotoArchivo.file);
+          });
+          var blob = await api('/git/blobs', 'POST', { content: contenido, encoding: 'base64' });
+          fotoArchivo.sha = blob.sha;
+        }
+        progreso(10 + Math.round((i + 1) / fotos.length * 45));
+      }
+      var eventoBlob = await api('/git/blobs', 'POST', {
+        content: JSON.stringify(evento, null, 2) + '\n', encoding: 'utf-8'
       });
-    } else {
-      // Fallback si Storage SDK no está cargado: DataURL en Firestore
-      return new Promise(function(resolve, reject){
-        var reader = new FileReader();
-        reader.onload = function(e){
-          guardarEnFirestore(e.target.result).then(resolve).catch(reject);
-        };
-        reader.onerror = function(err){ reject(err); };
-        reader.readAsDataURL(file);
+      var entradas = fotos.map(function(f){
+        return { path: f.ruta, mode: '100644', type: 'blob', sha: f.sha };
       });
+      entradas.push({ path: rutaEvento, mode: '100644', type: 'blob', sha: eventoBlob.sha });
+      var tree = await api('/git/trees', 'POST', { base_tree: commitBase.tree.sha, tree: entradas });
+      var commit = await api('/git/commits', 'POST', {
+        message: 'Añade ' + fotos.length + ' foto(s) a ' + eventoId + ' desde la galería',
+        tree: tree.sha, parents: [head.object.sha]
+      });
+      progreso(85);
+      try {
+        await api('/git/refs/heads/' + rama, 'PATCH', { sha: commit.sha, force: false });
+      } catch(e){
+        // Si otra persona guardó entre tanto, releemos su versión y sumamos la
+        // foto sin pisar sus cambios. Nunca se fuerza el avance de la rama.
+        if ((e.status === 409 || e.status === 422) && intento < 2) continue;
+        throw e;
+      }
+      var guardadas = fotos.map(function(f){
+        return { id: 'repo:' + f.ruta, eventoId: eventoId,
+          url: URL.createObjectURL(f.file), caption: caption || evento.titulo || '',
+          nombreArchivo: f.file.name, repoPath: f.ruta, esRepositorio: true };
+      });
+      fotosRepositorioSesion = fotosRepositorioSesion.concat(guardadas);
+      progreso(100);
+      return guardadas;
     }
+  }
+
+  function subirFotoEvento(eventoId, file, caption, onProgreso){
+    return subirFotosEvento(eventoId, [file], caption, onProgreso).then(function(fotos){ return fotos[0]; });
   }
 
   function obtenerFotosEvento(eventoId){
@@ -278,7 +348,10 @@
         });
         return lista;
       })
-      .catch(function(){ return []; });
+      .catch(function(){ return []; })
+      .then(function(fotos){
+        return fotos.concat(fotosRepositorioSesion.filter(function(f){ return !eventoId || f.eventoId === eventoId; }));
+      });
   }
 
   function eliminarFotoEvento(docId, rutaStorage){
@@ -327,6 +400,7 @@
     obtenerConfigMembresia: obtenerConfigMembresia,
     declararPago: declararPago,
     subirFotoEvento: subirFotoEvento,
+    subirFotosEvento: subirFotosEvento,
     obtenerFotosEvento: obtenerFotosEvento,
     eliminarFotoEvento: eliminarFotoEvento,
     obtenerTodasLasFotosEventos: obtenerTodasLasFotosEventos,

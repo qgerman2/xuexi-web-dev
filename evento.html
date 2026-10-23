@@ -6,7 +6,7 @@
 <title>Detalle del Evento · Xuexi Club UC</title>
 <meta name="description" content="Detalle del evento y galería de fotos del Xuexi Club UC, el club de Lengua, Cultura y Estudios sobre China de la Pontificia Universidad Católica de Chile.">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/site.css?v=28">
+<link rel="stylesheet" href="assets/site.css?v=29">
 <style>
 /* Vista de actividad: los colores y la tipografía vienen del sistema del sitio. */
 .event-page{padding:clamp(28px,5vw,64px) 0 clamp(56px,8vw,100px)}
@@ -17,6 +17,8 @@
 .event-breadcrumb a:hover{text-decoration:underline;text-underline-offset:4px}
 .event-breadcrumb [aria-current]{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65ch}
 .event-heading{position:relative;margin-bottom:30px}
+.event-admin-actions{margin-top:18px}
+.event-admin-actions .btn{font-size:.7rem;padding:9px 14px}
 .event-tags{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px}
 .event-type{font-size:.67rem;letter-spacing:.15em;text-transform:uppercase;font-weight:600;
   border:1px solid var(--gold-deep);color:var(--gold);padding:4px 11px;border-radius:var(--r)}
@@ -26,13 +28,20 @@
   max-width:22ch;overflow-wrap:anywhere;text-wrap:balance}
 .event-heading h1 .zh{color:var(--gold);font-size:.75em;margin-left:12px;white-space:nowrap}
 .event-subtitle{margin-top:16px;color:var(--cream-dim);font-size:.85rem;display:flex;gap:10px;flex-wrap:wrap}
-.event-cover{margin:0 0 clamp(28px,4vw,44px);position:relative;border:1px solid var(--line);
+.event-cover{grid-area:cover;align-self:start;margin:0;position:sticky;top:86px;border:1px solid var(--line);
   border-radius:var(--r);overflow:hidden;background:radial-gradient(ellipse at center,rgba(212,175,97,.08),transparent 70%),var(--ink)}
-.event-cover img{width:100%;height:clamp(300px,43vw,520px);object-fit:contain}
+.event-cover img{width:100%;height:auto;object-fit:contain}
 .event-cover--empty{height:220px;display:grid;place-items:center;
   background:radial-gradient(ellipse at 65% 100%,rgba(192,57,43,.3),transparent 70%),var(--ground-2)}
 .event-cover--empty .glyph{font-size:7rem;color:var(--gold);opacity:.35;line-height:1}
-.event-columns{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start;margin-bottom:52px}
+.event-columns{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  grid-template-areas:"cover info" "cover participation";gap:24px 32px;align-items:start;margin-bottom:52px}
+.event-columns--wide{grid-template-columns:minmax(0,1fr) 300px;
+  grid-template-areas:"cover cover" "info participation"}
+.event-columns--wide .event-cover{position:relative;top:auto}
+.event-columns--wide .event-cover img{max-height:560px}
+.event-information{grid-area:info}
+.event-participation{grid-area:participation}
 .event-information{min-width:0;border:1px solid var(--line);background:var(--card);border-radius:var(--r);
   padding:clamp(20px,3vw,32px)}
 .event-section-heading{display:flex;align-items:baseline;gap:12px;font-family:var(--serif);
@@ -50,7 +59,7 @@
 .event-topic{display:inline-block;border:1px solid var(--line);border-radius:var(--r);padding:5px 12px;
   color:var(--gold);font-size:.75rem;margin-top:22px}
 .event-participation{border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:var(--r);
-  background:var(--ground-2);position:sticky;top:86px;overflow:hidden}
+  background:var(--ground-2);overflow:hidden}
 .event-participation-head{padding:24px 24px 20px;border-bottom:1px solid var(--line);
   background:radial-gradient(ellipse at top right,rgba(212,175,97,.1),transparent 80%)}
 .event-participation-head h2{font-family:var(--serif);font-size:1.45rem;margin-top:5px;line-height:1.2}
@@ -101,7 +110,8 @@
 .event-related-copy time{font-size:.75rem;color:var(--cream-dim)}
 .event-related-copy>span{margin-top:auto;padding-top:8px;color:var(--gold);font-size:.75rem}
 @media(max-width:820px){
-  .event-columns{grid-template-columns:minmax(0,1fr);gap:22px}
+  .event-columns,.event-columns--wide{grid-template-columns:minmax(0,1fr);grid-template-areas:"cover" "info" "participation";gap:22px}
+  .event-cover{position:relative;top:auto;max-width:560px;width:100%;justify-self:center}
   .event-participation{position:static}
   .event-participation-head{display:flex;justify-content:space-between;align-items:center;gap:20px}
   .event-date-stamp{margin-top:0}
@@ -115,7 +125,7 @@
   .event-breadcrumb{margin-bottom:22px;font-size:.65rem}
   .event-breadcrumb [aria-current]{max-width:30ch}
   .event-heading h1{font-size:2.2rem}
-  .event-cover img{height:auto;max-height:480px;min-height:180px}
+  .event-cover img{height:auto}
   .event-facts{grid-template-columns:minmax(0,1fr)}
   .event-fact--wide{grid-column:auto}
   .event-participation-head{padding:20px;gap:10px}
@@ -232,10 +242,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-<script src="assets/firebase-config.js?v=28"></script>
-<script src="assets/nav.js?v=28"></script>
-<script src="assets/auth.js?v=28"></script>
-<script src="assets/datos.js?v=28"></script>
+<script src="assets/firebase-config.js?v=29"></script>
+<script src="assets/nav.js?v=29"></script>
+<script src="assets/auth.js?v=29"></script>
+<script src="assets/datos.js?v=29"></script>
 <script>
 (function(){
   document.getElementById('anio').textContent = new Date().getFullYear();
@@ -452,9 +462,10 @@
           '<span class="estado ' + est.cls + '">' + esc(est.txt) + '</span></div>' +
         '<h1>' + esc(ev.titulo) + (ev.hanzi ? '<span class="zh" aria-hidden="true">' + esc(ev.hanzi) + '</span>' : '') + '</h1>' +
         '<p class="event-subtitle">Xuexi Club UC' + (com ? '<span aria-hidden="true">·</span> Comisión ' + esc(com.nom) : '') + '</p>' +
+        '<div class="event-admin-actions"><a class="btn btn-gold" id="editar-evento" href="admin.html?evento=' + esc(encodeURIComponent(ev.id)) + '" hidden>Editar evento <span aria-hidden="true">↗</span></a></div>' +
       '</header>' +
+      '<div class="event-columns' + (!ev.imagen ? ' event-columns--wide' : '') + '">' +
       '<figure class="event-cover' + (!ev.imagen ? ' event-cover--empty' : '') + '">' + mediaPortada + '</figure>' +
-      '<div class="event-columns">' +
         '<article class="event-information" aria-labelledby="informacion-actividad">' +
           '<h2 class="event-section-heading" id="informacion-actividad"><span class="zh" aria-hidden="true">关于</span> Información de la actividad</h2>' +
           '<p class="event-description">' + esc(ev.detalle || 'Actividad organizada por Xuexi Club UC.') + '</p>' +
@@ -511,6 +522,17 @@
       '</div>' + masActividades;
 
     contenedor.innerHTML = html;
+    var portada = contenedor.querySelector('.event-cover img');
+    if (portada){
+      var ajustarFormato = function(){
+        if (portada.naturalWidth && portada.naturalHeight){
+          contenedor.querySelector('.event-columns').classList.toggle('event-columns--wide',
+            portada.naturalWidth / portada.naturalHeight > 1.4);
+        }
+      };
+      portada.addEventListener('load', ajustarFormato);
+      if (portada.complete) ajustarFormato();
+    }
 
     var stageImg = document.getElementById('stage-img');
     var stageCount = document.getElementById('stage-count');
@@ -581,7 +603,7 @@
             caption: fd.caption || (ev.titulo + ' · Foto oficial'),
             nombreArchivo: fd.nombreArchivo || '',
             rutaStorage: fd.rutaStorage || '',
-            esDinamica: true
+            esDinamica: !fd.esRepositorio
           };
         });
 
@@ -656,12 +678,13 @@
             '<h4 style="font-family:var(--serif);font-size:1.15rem;color:var(--cream);margin:0;display:flex;align-items:center;gap:8px;"><span class="zh" style="color:var(--gold);">相册管理</span> Panel de Administración · Subir Fotos</h4>' +
             '<span class="admin-badge-direct" style="background:rgba(192,57,43,.25);border:1px solid var(--gold);color:var(--gold);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:20px;font-weight:700;">Acceso Coordinación</span>' +
           '</div>' +
-          '<div class="admin-drop-zone" id="admin-drop-zone" style="border:2px dashed rgba(212,175,97,.45);border-radius:var(--r);padding:26px 16px;text-align:center;background:rgba(20,14,14,.55);cursor:pointer;transition:all .25s ease;">' +
+          '<div class="admin-drop-zone" id="admin-drop-zone" role="button" tabindex="0" aria-label="Seleccionar fotos" style="border:2px dashed rgba(212,175,97,.45);border-radius:var(--r);padding:26px 16px;text-align:center;background:rgba(20,14,14,.55);cursor:pointer;transition:all .25s ease;">' +
             '<div class="admin-drop-icon" style="font-size:2.2rem;line-height:1;margin-bottom:8px;color:var(--gold);">📸</div>' +
             '<p class="admin-drop-text" style="font-size:.88rem;color:var(--cream-dim);margin:0 0 6px;"><b>Arrastra fotos aquí</b> o haz clic para seleccionarlas</p>' +
-            '<p class="admin-drop-hint" style="font-size:.74rem;color:var(--cream-faint);margin:0;">Formatos JPG, PNG, WEBP. Se publican de inmediato en la galería.</p>' +
-            '<input type="file" id="admin-file-input" class="admin-upload-input" accept="image/*" multiple style="display:none !important;">' +
+            '<p class="admin-drop-hint" style="font-size:.74rem;color:var(--cream-faint);margin:0;">JPG, PNG o WEBP · Hasta 20 MB por imagen. La publicación puede tardar unos minutos.</p>' +
+            '<input type="file" id="admin-file-input" class="admin-upload-input" accept="image/jpeg,image/png,image/webp" multiple style="display:none !important;">' +
           '</div>' +
+          '<p id="upload-result" role="status" aria-live="polite" style="font-size:.82rem;margin-top:12px;overflow-wrap:anywhere;"></p>' +
           '<div class="admin-preview-list" id="admin-preview-list" style="display:none;"></div>' +
           '<div class="admin-upload-controls" id="admin-upload-controls" style="display:none;margin-top:16px;align-items:center;gap:12px;flex-wrap:wrap;">' +
             '<button type="button" class="btn btn-sello" id="btn-do-upload"><span class="zh">上传</span> Subir a la galería</button>' +
@@ -669,7 +692,7 @@
             '<span id="upload-status-text" style="font-size:.82rem;color:var(--gold);margin-left:auto;"></span>' +
           '</div>' +
           '<div class="admin-upload-progress" id="admin-upload-progress" style="display:none;width:100%;background:rgba(20,14,14,.8);border:1px solid var(--line);border-radius:10px;height:8px;overflow:hidden;margin-top:12px;">' +
-            '<div class="admin-upload-bar" id="admin-upload-bar" style="height:100%;background:linear-gradient(90deg,var(--granate),var(--gold));width:0%;transition:width .2s ease;"></div>' +
+            '<div class="admin-upload-bar" id="admin-upload-bar" style="height:100%;background:linear-gradient(90deg,var(--vermilion),var(--gold));width:0%;transition:width .2s ease;"></div>' +
           '</div>' +
         '</div>';
 
@@ -684,8 +707,12 @@
       var progressBar = document.getElementById('admin-upload-bar');
 
       var archivosSeleccionados = [];
+      var subiendo = false;
+      var previewURLs = [];
 
       function actualizarPreviews(){
+        previewURLs.forEach(function(url){ URL.revokeObjectURL(url); });
+        previewURLs = [];
         if (!archivosSeleccionados.length){
           previewList.style.display = 'none';
           uploadControls.style.display = 'none';
@@ -703,10 +730,15 @@
           thumb.className = 'admin-preview-thumb';
           var img = document.createElement('img');
           img.src = URL.createObjectURL(file);
+          previewURLs.push(img.src);
           var btnRem = document.createElement('button');
           btnRem.className = 'admin-preview-remove';
+          btnRem.type = 'button';
+          btnRem.disabled = subiendo;
+          btnRem.setAttribute('aria-label', 'Quitar ' + file.name);
           btnRem.innerHTML = '&times;';
           btnRem.addEventListener('click', function(){
+            if (subiendo) return;
             archivosSeleccionados.splice(i, 1);
             actualizarPreviews();
           });
@@ -716,12 +748,16 @@
         });
       }
 
-      dropZone.addEventListener('click', function(){ fileInput.click(); });
+      dropZone.addEventListener('click', function(){ if (!subiendo) fileInput.click(); });
+      dropZone.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); if (!subiendo) fileInput.click(); }
+      });
       dropZone.addEventListener('dragover', function(e){ e.preventDefault(); dropZone.classList.add('dragover'); });
       dropZone.addEventListener('dragleave', function(){ dropZone.classList.remove('dragover'); });
       dropZone.addEventListener('drop', function(e){
         e.preventDefault();
         dropZone.classList.remove('dragover');
+        if (subiendo) return;
         if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
           archivosSeleccionados = archivosSeleccionados.concat(Array.from(e.dataTransfer.files));
           actualizarPreviews();
@@ -729,59 +765,49 @@
       });
 
       fileInput.addEventListener('change', function(){
+        if (subiendo) return;
         if (fileInput.files && fileInput.files.length){
           archivosSeleccionados = archivosSeleccionados.concat(Array.from(fileInput.files));
+          fileInput.value = '';
           actualizarPreviews();
         }
       });
 
       btnCancel.addEventListener('click', function(){
+        if (subiendo) return;
         archivosSeleccionados = [];
         actualizarPreviews();
       });
 
-      btnDoUpload.addEventListener('click', function(){
-        if (!archivosSeleccionados.length) return;
-        btnDoUpload.disabled = true;
-        btnCancel.disabled = true;
+      btnDoUpload.addEventListener('click', async function(){
+        if (subiendo || !archivosSeleccionados.length) return;
+        var evId = ev.id;
+        var lote = archivosSeleccionados.slice();
+        var resultado = document.getElementById('upload-result');
+        resultado.textContent = '';
+        subiendo = true;
+        btnDoUpload.disabled = btnCancel.disabled = fileInput.disabled = true;
+        dropZone.setAttribute('aria-disabled', 'true');
+        actualizarPreviews();
         progressBox.style.display = 'block';
-        progressBar.style.width = '5%';
-        statusText.textContent = 'Subiendo 0 de ' + archivosSeleccionados.length + '...';
-
-        var subidos = 0;
-        var total = archivosSeleccionados.length;
-
-        function subirSiguiente(i){
-          if (i >= total){
-            progressBar.style.width = '100%';
-            statusText.textContent = '¡' + total + ' foto(s) subidas con éxito!';
-            setTimeout(function(){
-              archivosSeleccionados = [];
-              actualizarPreviews();
-              progressBox.style.display = 'none';
-              btnDoUpload.disabled = false;
-              btnCancel.disabled = false;
-              cargarFotosCompletas();
-            }, 1200);
-            return;
-          }
-
-          var file = archivosSeleccionados[i];
-          statusText.textContent = 'Subiendo ' + (i + 1) + ' de ' + total + ' (' + file.name + ')...';
-
-          window.XuexiAuth.subirFotoEvento(ev.id, file, ev.titulo, function(pct){
-            var generalPct = Math.round(((i + (pct / 100)) / total) * 100);
-            progressBar.style.width = generalPct + '%';
-          }).then(function(){
-            subidos++;
-            subirSiguiente(i + 1);
-          }).catch(function(err){
-            alert('Error al subir ' + file.name + ': ' + err.message);
-            subirSiguiente(i + 1);
+        progressBar.style.width = '0%';
+        statusText.textContent = 'Guardando ' + lote.length + ' foto(s)…';
+        try {
+          var nuevas = await window.XuexiAuth.subirFotosEvento(evId, lote, ev.titulo, function(pct){
+            progressBar.style.width = pct + '%';
           });
+          archivosSeleccionados = [];
+          resultado.textContent = nuevas.length + ' foto(s) guardadas. La publicación puede tardar unos minutos.';
+          await cargarFotosCompletas();
+        } catch(err){
+          resultado.textContent = 'No se guardó el lote: ' + err.message;
+        } finally {
+          subiendo = false;
+          btnDoUpload.disabled = btnCancel.disabled = fileInput.disabled = false;
+          dropZone.setAttribute('aria-disabled', 'false');
+          progressBox.style.display = 'none';
+          actualizarPreviews();
         }
-
-        subirSiguiente(0);
       });
     }
 
@@ -789,6 +815,7 @@
 
     window.XuexiAuth.onAuth(function(user){
       usuarioActual = user;
+      document.getElementById('editar-evento').hidden = !user || user.rol !== 'admin';
       renderGaleria();
       inicializarPanelAdmin(user);
     });

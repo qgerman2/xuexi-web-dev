@@ -6,7 +6,7 @@
 <title>Galería · Xuexi Club UC</title>
 <meta name="description" content="Galería fotográfica del Xuexi Club UC: talleres, charlas, festivales y momentos de nuestra comunidad.">
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/site.css?v=20">
+<link rel="stylesheet" href="assets/site.css?v=29">
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -146,10 +146,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
-<script src="assets/firebase-config.js?v=28"></script>
-<script src="assets/nav.js?v=28"></script>
-<script src="assets/auth.js?v=28"></script>
-<script src="assets/datos.js?v=28"></script>
+<script src="assets/firebase-config.js?v=29"></script>
+<script src="assets/nav.js?v=29"></script>
+<script src="assets/auth.js?v=29"></script>
+<script src="assets/datos.js?v=29"></script>
 <script>
 (function(){
   document.getElementById('anio').textContent = new Date().getFullYear();
@@ -474,12 +474,13 @@
               optionsHtml +
             '</select>' +
           '</div>' +
-          '<div class="admin-drop-zone" id="gal-admin-drop-zone" style="border:2px dashed rgba(212,175,97,.45);border-radius:var(--r);padding:26px 16px;text-align:center;background:rgba(20,14,14,.55);cursor:pointer;transition:all .25s ease;">' +
+          '<div class="admin-drop-zone" id="gal-admin-drop-zone" role="button" tabindex="0" aria-label="Seleccionar fotos" style="border:2px dashed rgba(212,175,97,.45);border-radius:var(--r);padding:26px 16px;text-align:center;background:rgba(20,14,14,.55);cursor:pointer;transition:all .25s ease;">' +
             '<div class="admin-drop-icon" style="font-size:2.2rem;line-height:1;margin-bottom:8px;color:var(--gold);">📸</div>' +
             '<p class="admin-drop-text" style="font-size:.88rem;color:var(--cream-dim);margin:0 0 6px;"><b>Arrastra fotos aquí</b> o haz clic para seleccionarlas</p>' +
-            '<p class="admin-drop-hint" style="font-size:.74rem;color:var(--cream-faint);margin:0;">Formatos JPG, PNG, WEBP. Se publican de inmediato en la galería general y en la subpágina del evento.</p>' +
-            '<input type="file" id="gal-admin-file-input" class="admin-upload-input" accept="image/*" multiple style="display:none !important;">' +
+            '<p class="admin-drop-hint" style="font-size:.74rem;color:var(--cream-faint);margin:0;">JPG, PNG o WEBP · Hasta 20 MB por imagen. Se guardan en el sitio; la publicación puede tardar unos minutos.</p>' +
+            '<input type="file" id="gal-admin-file-input" class="admin-upload-input" accept="image/jpeg,image/png,image/webp" multiple style="display:none !important;">' +
           '</div>' +
+          '<p id="gal-upload-result" role="status" aria-live="polite" style="font-size:.82rem;margin-top:12px;overflow-wrap:anywhere;"></p>' +
           '<div class="admin-preview-list" id="gal-admin-preview-list" style="display:none;"></div>' +
           '<div class="admin-upload-controls" id="gal-admin-upload-controls" style="display:none;margin-top:16px;align-items:center;gap:12px;flex-wrap:wrap;">' +
             '<button type="button" class="btn btn-sello" id="gal-btn-do-upload"><span class="zh">上传</span> Subir a la galería</button>' +
@@ -487,7 +488,7 @@
             '<span id="gal-upload-status-text" style="font-size:.82rem;color:var(--gold);margin-left:auto;"></span>' +
           '</div>' +
           '<div class="admin-upload-progress" id="gal-admin-upload-progress" style="display:none;width:100%;background:rgba(20,14,14,.8);border:1px solid var(--line);border-radius:10px;height:8px;overflow:hidden;margin-top:12px;">' +
-            '<div class="admin-upload-bar" id="gal-admin-upload-bar" style="height:100%;background:linear-gradient(90deg,var(--granate),var(--gold));width:0%;transition:width .2s ease;"></div>' +
+            '<div class="admin-upload-bar" id="gal-admin-upload-bar" style="height:100%;background:linear-gradient(90deg,var(--vermilion),var(--gold));width:0%;transition:width .2s ease;"></div>' +
           '</div>' +
         '</div>';
 
@@ -503,8 +504,12 @@
       var selectEv = document.getElementById('gal-admin-select-ev');
 
       var archivosSeleccionados = [];
+      var subiendo = false;
+      var previewURLs = [];
 
       function actualizarPreviews(){
+        previewURLs.forEach(function(url){ URL.revokeObjectURL(url); });
+        previewURLs = [];
         if (!archivosSeleccionados.length){
           previewList.style.display = 'none';
           uploadControls.style.display = 'none';
@@ -522,10 +527,15 @@
           thumb.className = 'admin-preview-thumb';
           var img = document.createElement('img');
           img.src = URL.createObjectURL(file);
+          previewURLs.push(img.src);
           var btnRem = document.createElement('button');
           btnRem.className = 'admin-preview-remove';
+          btnRem.type = 'button';
+          btnRem.disabled = subiendo;
+          btnRem.setAttribute('aria-label', 'Quitar ' + file.name);
           btnRem.innerHTML = '&times;';
           btnRem.addEventListener('click', function(){
+            if (subiendo) return;
             archivosSeleccionados.splice(i, 1);
             actualizarPreviews();
           });
@@ -535,12 +545,16 @@
         });
       }
 
-      dropZone.addEventListener('click', function(){ fileInput.click(); });
+      dropZone.addEventListener('click', function(){ if (!subiendo) fileInput.click(); });
+      dropZone.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); if (!subiendo) fileInput.click(); }
+      });
       dropZone.addEventListener('dragover', function(e){ e.preventDefault(); dropZone.classList.add('dragover'); });
       dropZone.addEventListener('dragleave', function(){ dropZone.classList.remove('dragover'); });
       dropZone.addEventListener('drop', function(e){
         e.preventDefault();
         dropZone.classList.remove('dragover');
+        if (subiendo) return;
         if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
           archivosSeleccionados = archivosSeleccionados.concat(Array.from(e.dataTransfer.files));
           actualizarPreviews();
@@ -548,61 +562,60 @@
       });
 
       fileInput.addEventListener('change', function(){
+        if (subiendo) return;
         if (fileInput.files && fileInput.files.length){
           archivosSeleccionados = archivosSeleccionados.concat(Array.from(fileInput.files));
+          fileInput.value = '';
           actualizarPreviews();
         }
       });
 
       btnCancel.addEventListener('click', function(){
+        if (subiendo) return;
         archivosSeleccionados = [];
         actualizarPreviews();
       });
 
-      btnDoUpload.addEventListener('click', function(){
+      btnDoUpload.addEventListener('click', async function(){
+        if (subiendo || !archivosSeleccionados.length) return;
         var evId = selectEv.value;
-        if (!evId){
-          alert('Por favor selecciona primero la actividad correspondiente.');
-          selectEv.focus();
-          return;
-        }
-        if (!archivosSeleccionados.length) return;
-
-        btnDoUpload.disabled = true;
-        btnCancel.disabled = true;
+        if (!evId){ selectEv.focus(); return; }
+        var lote = archivosSeleccionados.slice();
+        var resultado = document.getElementById('gal-upload-result');
+        resultado.textContent = '';
+        subiendo = true;
+        btnDoUpload.disabled = btnCancel.disabled = fileInput.disabled = true;
+        selectEv.disabled = true;
+        dropZone.setAttribute('aria-disabled', 'true');
+        actualizarPreviews();
         progressBox.style.display = 'block';
-        progressBar.style.width = '5%';
-        statusText.textContent = 'Subiendo 0 de ' + archivosSeleccionados.length + '...';
-
-        var subidos = 0;
-        var total = archivosSeleccionados.length;
-
-        function subirSiguiente(i){
-          if (i >= total){
-            progressBar.style.width = '100%';
-            statusText.textContent = '¡' + total + ' foto(s) subidas con éxito!';
-            setTimeout(function(){
-              location.reload();
-            }, 1200);
-            return;
-          }
-
-          var file = archivosSeleccionados[i];
-          statusText.textContent = 'Subiendo ' + (i + 1) + ' de ' + total + ' (' + file.name + ')...';
-
-          window.XuexiAuth.subirFotoEvento(evId, file, '', function(pct){
-            var generalPct = Math.round(((i + (pct / 100)) / total) * 100);
-            progressBar.style.width = generalPct + '%';
-          }).then(function(){
-            subidos++;
-            subirSiguiente(i + 1);
-          }).catch(function(err){
-            alert('Error al subir ' + file.name + ': ' + err.message);
-            subirSiguiente(i + 1);
+        progressBar.style.width = '0%';
+        statusText.textContent = 'Guardando ' + lote.length + ' foto(s)…';
+        try {
+          var nuevas = await window.XuexiAuth.subirFotosEvento(evId, lote, '', function(pct){
+            progressBar.style.width = pct + '%';
           });
+          archivosSeleccionados = [];
+          resultado.textContent = nuevas.length + ' foto(s) guardadas. La publicación puede tardar unos minutos.';
+          var actividad = evs.find(function(e){ return e.id === evId; }) || {};
+          var d = fecha(actividad.fecha);
+          nuevas.forEach(function(f){
+            todasLasFotos.unshift({ url: f.url, titulo: actividad.titulo || 'Actividad Xuexi',
+              tipo: actividad.tipo || 'social', hanzi: actividad.hanzi || '学',
+              fechaTxt: d.getDate() + ' ' + MESES_CORTO[d.getMonth()] + ' ' + d.getFullYear(),
+              fechaObj: d, eventoId: evId });
+          });
+          renderMosaico();
+        } catch(err){
+          resultado.textContent = 'No se guardó el lote: ' + err.message;
+        } finally {
+          subiendo = false;
+          btnDoUpload.disabled = btnCancel.disabled = fileInput.disabled = false;
+          selectEv.disabled = false;
+          dropZone.setAttribute('aria-disabled', 'false');
+          progressBox.style.display = 'none';
+          actualizarPreviews();
         }
-
-        subirSiguiente(0);
       });
     }
 

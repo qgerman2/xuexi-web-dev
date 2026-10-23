@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <title>Panel del equipo · Xuexi Club UC</title>
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/site.css?v=28">
+<link rel="stylesheet" href="assets/site.css?v=29">
 <style>
   :root{
     --fondo:#1a1010; --panel:#241616; --linea:#4a3030;
@@ -192,8 +192,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-<script src="assets/nav.js?v=28"></script>
-<script src="assets/firebase-config.js?v=28"></script>
+<script src="assets/nav.js?v=29"></script>
+<script src="assets/firebase-config.js?v=29"></script>
 <script>
 /* Panel del equipo · Xuexi Club UC
  *
@@ -212,6 +212,10 @@
 
   var ROL_REQUERIDO = 'admin';
   var EDITOR = 'admin/';
+  var eventoSolicitado = new URLSearchParams(window.location.search).get('evento');
+  if (eventoSolicitado && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(eventoSolicitado)){
+    EDITOR += '#/collections/agenda/entries/' + encodeURIComponent(eventoSolicitado);
+  }
   var INSTAGRAM = 'https://ig.qgerman2.workers.dev/instagram/posts';
   var igPeticion = null;
   var igSeleccionando = false;
