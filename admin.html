@@ -195,7 +195,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="assets/nav.js?v=32"></script>
 <script src="assets/firebase-config.js?v=32"></script>
-<script src="admin/instagram-media.js?v=3"></script>
+<script src="admin/instagram-media.js?v=4"></script>
 <script>
 /* Editor · Xuexi Club UC
  *
@@ -223,7 +223,7 @@
   var igSeleccionando = false;
   var igImportacion = null;
   var igFotosImportadas = null;
-  var igDejarDeObservarId = null;
+  var igLimpiarSalida = null;
   var igCancelar = document.getElementById('ig-cancelar');
   var igEstado = document.getElementById('ig-estado');
   var igLista = document.getElementById('ig-lista');
@@ -272,7 +272,7 @@
     // Retira el contenido de la sesión anterior antes de comprobar la nueva.
     if (igPeticion) igPeticion.abort();
     if (igImportacion) igImportacion.abort();
-    if (igDejarDeObservarId) igDejarDeObservarId();
+    if (igLimpiarSalida) igLimpiarSalida();
     igFotosImportadas = null;
     igLista.replaceChildren();
     taller.classList.remove('visible');
@@ -400,7 +400,7 @@
   }
 
   function estadoImportacion(texto){
-    // Replacing native draft queue entries must finish before cancellation;
+    // Uploading to the native draft queue must finish before cancellation;
     // downloads and the wait for an identifier remain cancellable.
     igCancelar.disabled = /^Preparando foto/.test(texto);
     estadoInstagram(texto);
@@ -587,7 +587,7 @@
           }
         }
       });
-      observarIdentificador(d, user);
+      observarSalida(d);
       igLista.querySelectorAll('.ig-elegir').forEach(function(b){
         b.setAttribute('aria-pressed', b === boton ? 'true' : 'false');
       });
@@ -604,68 +604,19 @@
     }
   }
 
-  function observarIdentificador(d, user){
-    if (igDejarDeObservarId) igDejarDeObservarId();
-    if (!igFotosImportadas?.archivos?.length) return;
+  function observarSalida(d){
+    if (igLimpiarSalida) igLimpiarSalida();
     var ventana = d.defaultView;
-    var ruta = ventana.location.hash;
-    function dejar(){
-      d.removeEventListener('input', cambio);
+    function salir(){
       ventana.removeEventListener('hashchange', salir);
-      igDejarDeObservarId = null;
+      igLimpiarSalida = null;
+      igFotosImportadas = null;
     }
-    function salir(){ dejar(); igFotosImportadas = null; }
-    function cambio(event){
-      var input = campoPorEtiqueta(d, 'Identificador');
-      if (event.target !== input) return;
-      if (!igSeleccionando && !input.readOnly && ventana.location.hash === ruta &&
-          igFotosImportadas?.id && input.value !== igFotosImportadas.id){
-        actualizarIdentificador(d, user);
-      }
-    }
-    d.addEventListener('input', cambio);
     ventana.addEventListener('hashchange', salir);
-    igDejarDeObservarId = dejar;
-  }
-
-  async function actualizarIdentificador(d, user){
-    var anterior = igFotosImportadas;
-    var ruta = d.defaultView.location.hash;
-    var importacion = new AbortController();
-    igSeleccionando = true;
-    igImportacion = importacion;
-    igCancelar.hidden = false;
-    try {
-      igFotosImportadas = await window.XuexiIGMedios.importar({
-        archivos: anterior.archivos, anterior: anterior, documento: d,
-        signal: importacion.signal, onEstado: estadoImportacion,
-        onVistaPrevia: function(fotos){ d.defaultView?.XuexiIGVistaPrevia?.mostrar(fotos); },
-        inyectarFotos: inyectarFotos,
-        leerImagenes: function(){
-          var actual = d.defaultView.CMS.editor.getCurrentEntry();
-          if (!actual || actual.collection !== 'agenda') throw new Error('Abre el evento para actualizar sus fotos.');
-          return actual.data;
-        },
-        comprobar: function(){
-          if (firebase.auth().currentUser !== user || doc() !== d){
-            throw new Error('La sesión cambió. Vuelve a entrar al editor.');
-          }
-        }
-      });
-      estadoInstagram('Identificador y fotos actualizados.');
-    } catch(e){
-      if (e.name === 'AbortError' && doc() === d && firebase.auth().currentUser === user &&
-          d.defaultView.location.hash === ruta){
-        inyectar({ 'Identificador': anterior.id });
-      }
-      estadoInstagram(e.name === 'AbortError' ? 'Cambio cancelado.' :
-        (e.message || 'No se pudieron actualizar las fotos.'), true);
-    } finally {
-      igSeleccionando = false;
-      igImportacion = null;
-      igCancelar.hidden = true;
-      igCancelar.disabled = false;
-    }
+    igLimpiarSalida = function(){
+      ventana.removeEventListener('hashchange', salir);
+      igLimpiarSalida = null;
+    };
   }
 
   igCancelar.addEventListener('click', function(){
@@ -684,12 +635,20 @@
     documentoEditor: doc,
     validarImportacion: function(entry){
       if (igSeleccionando) throw new Error('Espera a que termine la importación de fotos o cancélala.');
-      if (!igFotosImportadas?.id) return;
       var data = entry.get('data');
-      var imagenes = [data.get('imagen')].concat(data.get('galeria')?.toJS?.() || data.get('galeria') || []);
-      if (data.get('id') !== igFotosImportadas.id && imagenes.some(function(ruta){
-        return igFotosImportadas.rutas.includes(ruta);
-      })) throw new Error('El identificador cambió. Vuelve a importar las fotos antes de guardar.');
+      if (!igFotosImportadas?.id) return data;
+      var id = data.get('id');
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(id || '')) throw new Error('Completa el identificador antes de publicar.');
+      function rutaFinal(valor){
+        var indice = igFotosImportadas.rutas.indexOf(valor);
+        return indice === -1 ? valor : 'assets/eventos/' + id + '/' + igFotosImportadas.archivos[indice].name;
+      }
+      var galeria = data.get('galeria');
+      if (galeria?.map) galeria = galeria.map(rutaFinal);
+      else if (galeria) galeria = rutaFinal(galeria);
+      // Decap moves draft assets to the final slug's folder when publishing.
+      // Return only updated data for its preSave hook; typing never stages media.
+      return data.set('imagen', rutaFinal(data.get('imagen'))).set('galeria', galeria);
     }
   };
 })();

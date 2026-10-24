@@ -148,7 +148,7 @@ test('Instagram import stages native Decap media and publishes photos + entry in
     await frame.getByRole('button', { name: 'Publicar', exact: true }).click();
     await frame.getByText('Publicar ahora', { exact: true }).click();
   };
-  // Swapping the cover/gallery must survive automatic identifier migrations.
+  // Swapping the cover/gallery must survive quiet identifier edits and publishing.
   await page.locator('#cms').evaluate(el => {
     const editor = el.contentWindow.CMS.editor;
     const data = editor.getCurrentEntry().data;
@@ -159,27 +159,33 @@ test('Instagram import stages native Decap media and publishes photos + entry in
     if (result.rejected.length) throw new Error('Could not swap draft photos');
   });
   const downloadedBeforeRename = downloads;
-  await frame.getByLabel('Identificador').first().click();
-  await frame.getByLabel('Identificador').first().press('ControlOrMeta+A');
-  await frame.getByLabel('Identificador').first().press('Backspace');
-  await page.getByText('Completa el identificador para actualizar las fotos.', { exact: true }).waitFor();
-  await page.locator('#ig-cancelar').click();
-  await page.getByText('Cambio cancelado.', { exact: true }).waitFor();
-  assert.equal(await frame.getByLabel('Identificador').first().inputValue(), 'prueba-ig');
-  assert.ok(await imagenCargada('.event-cover img'));
+  const estadoAntes = await page.locator('#ig-estado').innerText();
+  await page.locator('#cms').evaluate(el => {
+    const d = el.contentDocument;
+    el.contentWindow.dialogosDuranteEdicion = 0;
+    new el.contentWindow.MutationObserver(() => {
+      if (d.querySelector('[role="dialog"] input[type="file"]')) el.contentWindow.dialogosDuranteEdicion++;
+    }).observe(d.body, { childList: true, subtree: true });
+  });
   for (const id of ['prueba-ig', 'otro-id', 'evento-final']) {
     await frame.getByLabel('Identificador').first().click();
     await frame.getByLabel('Identificador').first().press('ControlOrMeta+A');
     await frame.getByLabel('Identificador').first().press('Backspace');
-    await page.getByText('Completa el identificador para actualizar las fotos.', { exact: true }).waitFor();
     assert.ok(await imagenCargada('.event-cover img'));
     await frame.getByLabel('Identificador').first().fill(id);
     await frame.getByLabel('Identificador').first().press('Tab');
-    await page.getByText('Identificador y fotos actualizados.', { exact: true }).waitFor();
+    // Longer than the removed 700 ms rename debounce: no upload dialog,
+    // focus changes, status churn or photo replacement should follow a blur.
+    await page.waitForTimeout(900);
     assert.equal(await frame.getByLabel('Identificador').first().inputValue(), id);
+    assert.equal(await frame.getByLabel('Título', { exact: true }).evaluate(input => input === input.ownerDocument.activeElement), true);
+    assert.equal(await page.locator('#ig-estado').innerText(), estadoAntes);
+    assert.equal(await page.locator('#ig-cancelar').isVisible(), false);
+    assert.equal(await page.locator('#cms').evaluate(el => el.contentWindow.dialogosDuranteEdicion), 0);
     assert.ok(await imagenCargada('.event-cover img'));
     assert.ok(await imagenCargada('#stage-img'));
-    assert.equal(downloads, downloadedBeforeRename, 'renaming reuses downloaded files');
+    assert.ok(await page.locator('#cms').evaluate(el => Array.from(el.contentDocument.querySelectorAll('img')).every(img => img.complete && img.naturalWidth > 0)));
+    assert.equal(downloads, downloadedBeforeRename, 'editing does not download files');
     assert.equal(requests.filter(r => r.method !== 'GET' && r.p !== '/sesion').length, 0);
   }
   await publish();

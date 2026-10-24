@@ -60,7 +60,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="../assets/firebase-config.js?v=32"></script>
 <script src="../assets/evento-vista.js?v=32"></script>
-<script src="preview-evento.js?v=2"></script>
+<script src="preview-evento.js?v=3"></script>
 <script>
 /* Acceso al panel con la cuenta de Xuexi.
  *
@@ -178,7 +178,7 @@
         window.registrarPreviewEvento(window.CMS);
         window.CMS.registerEventListener({ name: 'preSave', handler: function(event){
           if (event.entry.get('collection') === 'agenda'){
-            window.parent.PanelXuexi?.validarImportacion(event.entry);
+            return window.parent.PanelXuexi?.validarImportacion(event.entry);
           }
         } });
         window.CMS.init();

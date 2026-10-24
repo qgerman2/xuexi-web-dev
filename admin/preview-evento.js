@@ -4,6 +4,15 @@
   var raiz = new URL('../', window.location.href);
   var importacion = null;
   var CAMBIO_IMPORTACION = 'xuexi-instagram-preview';
+  var mediosBorrador = new Map();
+  window.addEventListener('hashchange', function(){ mediosBorrador.clear(); });
+  function medioEstable(getAsset, valor, campo){
+    var asset = getAsset(valor, campo);
+    if (asset && asset.path !== 'empty.svg' && /^(blob:|data:image)/.test(asset.toString())){
+      mediosBorrador.set(valor, asset);
+    }
+    return mediosBorrador.get(valor) || asset;
+  }
   // Temporary preview only; Decap's draft retains repository paths and owns
   // the actual media files. The importer clears this overlay on completion.
   window.XuexiIGVistaPrevia = {
@@ -14,6 +23,25 @@
   };
 
   window.registrarPreviewEvento = function(CMS){
+    // Keep native image widgets' draft thumbnails stable as the slug changes.
+    // Decap still owns the files, upload controls and saved values.
+    var imagen = CMS.getWidget('image');
+    var ImagenEstable = window.createClass({
+      getValidateValue: function(){
+        return this.control?.getValidateValue ? this.control.getValidateValue() : this.props.value;
+      },
+      render: function(){
+        var props = this.props, self = this;
+        return window.h(imagen.control, Object.assign({}, props, {
+          ref: function(control){ self.control = control; },
+          getAsset: function(valor, campo){ return medioEstable(props.getAsset, valor, campo); }
+        }));
+      }
+    });
+    CMS.registerWidget({
+      name: 'image', controlComponent: ImagenEstable, previewComponent: imagen.preview,
+      schema: imagen.schema, allowMapValue: imagen.allowMapValue, globalStyles: imagen.globalStyles
+    });
     CMS.registerPreviewStyle(new URL('assets/site.css?v=32', raiz).href);
     CMS.registerPreviewStyle(new URL('assets/evento.css?v=32', raiz).href);
     CMS.registerPreviewStyle('html,body{margin:0;padding:0}.frame-content{margin:0}', { raw: true });
@@ -46,7 +74,7 @@
         if (!valor) return '';
         if (/^(https?:|data:|blob:)/i.test(valor)) return valor;
         var asset;
-        try { asset = this.props.getAsset(valor); } catch(e){}
+        try { asset = medioEstable(this.props.getAsset, valor); } catch(e){}
         // Mientras carga, Decap devuelve el mismo empty.svg para cualquier
         // imagen. Usar la URL pública en ese intervalo evita mostrarlo como foto.
         var url = asset && asset.path !== 'empty.svg' ? asset.toString() : valor;
