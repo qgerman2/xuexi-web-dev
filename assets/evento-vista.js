@@ -77,6 +77,9 @@
       return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + trazos + '</svg>';
     }
     var RELOJ = icono('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>');
+    var PERSONAS = icono('<circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0112 0v2M16 5a3 3 0 010 6M21 21v-2a6 6 0 00-3-5.2"/>');
+    var cupos = Number(ev.cupos);
+    var cuposTexto = Number.isSafeInteger(cupos) && cupos > 0 ? String(cupos) : 'Ilimitado';
     var mediaPortada = ev.imagen
       ? '<img src="' + esc(ruta(ev.imagen, 'assets/')) + '" alt="' + esc(ev.titulo) + '" fetchpriority="high">'
       : '<span class="glyph zh" aria-hidden="true">' + esc(ev.hanzi || '学') + '</span>';
@@ -135,7 +138,7 @@
             (fechaConfirmada ? '<time datetime="' + esc(ev.fecha) + '">' + esc(fechaTexto) + '</time>' : 'Por confirmar') + '</div></div>' +
           '<div class="event-meta-item">' + RELOJ + '<div><span class="event-meta-label">Horario</span>' + esc(horario) + '</div></div>' +
           '<div class="event-meta-item">' + PIN + '<div><span class="event-meta-label">Lugar</span>' + esc(lugar) + '</div></div>' +
-          (ev.cupos > 0 ? '<div class="event-meta-item"><div><span class="event-meta-label">Capacidad</span>' + esc(ev.cupos) + ' participantes</div></div>' : '') +
+          '<div class="event-meta-item">' + PERSONAS + '<div><span class="event-meta-label">Cupos</span>' + cuposTexto + '</div></div>' +
         '</div>' +
         '<div class="event-actions">' + accion +
           (enlaceInstagram ? '<a class="event-instagram" href="' + esc(enlaceInstagram) + '" target="_blank" rel="noopener noreferrer">Ver en Instagram <span aria-hidden="true">↗</span></a>' : '') +

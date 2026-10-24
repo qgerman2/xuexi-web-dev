@@ -63,6 +63,7 @@ The event `id` is also its public URL and image-folder identifier. It must not c
 | `instagram` | Optional HTTPS Instagram post URL. |
 | `imagen` | Cover/banner image. |
 | `galeria` | Remaining carousel images; source strings or arrays are normalized by the aggregator. |
+| `cupos` | Optional number, beside Lugar in Decap. The information card shows Cupos; blank, missing or legacy zero values display Ilimitado. |
 
 Registration is offered for future events with `estado: abierto` or `online`. Full, forthcoming or completed events do not show an open-registration action. An absent registration URL retains the existing generic form fallback.
 
@@ -88,13 +89,14 @@ Decap remains pinned to **3.17.1**. Its DOM is used for imports, so test injecti
 The custom preview:
 
 - Updates the banner, information card and both text blocks from draft fields.
+- Immediately previews downloaded Instagram images while a new event still has a blank identifier. `window.XuexiIGVistaPrevia` provides a temporary, route-scoped overlay consumed by the React preview. The importer creates and revokes object URLs; these URLs never become saved entry fields. Completion switches back to native Decap draft assets, and cancellation removes the overlay.
 - Resolves images using Decap's `getAsset`, including in-memory/blob media.
 - Handles Decap's temporary `empty.svg` asset proxy: use the actual public URL while that placeholder is returned, rather than displaying the same blank SVG for every photo.
 - Supports carousel arrows, thumbnails, keyboard interaction and a lightbox.
 - Does not initialize Firebase or perform content writes.
 - Reflects responsive breakpoints at the preview pane's actual width, so a narrow pane shows the mobile stack.
 
-All shared `assets/` references currently use **`?v=30`**, consistently across pages. `admin/preview-evento.js` uses its own `?v=1`. When changing shared assets, update cache versions together and regenerate event pages. Earlier mismatched Firebase script versions caused login/portal redirect loops.
+All shared `assets/` references currently use **`?v=31`**, consistently across pages. `admin/preview-evento.js` and `admin/instagram-media.js` use their own `?v=2`. When changing shared assets, update cache versions together and regenerate event pages. Earlier mismatched Firebase script versions caused login/portal redirect loops.
 
 ## Editor access and navigation
 
@@ -189,7 +191,7 @@ The parent exposes `PanelXuexi.validarImportacion`, called by an Agenda `preSave
 
 New Worker route: **GET `/instagram/media/<numeric-media-id>`**. It performs the same Firebase session and current-admin checks as `/instagram/posts`, finds the image in the authenticated IG account's latest ten posts (including carousel children), and fetches its current URL. It accepts no caller-supplied URL, restricts HTTPS destinations to `fbcdn.net`/`cdninstagram.com`, rejects redirects, never forwards credentials to the CDN, and accepts only JPG/PNG/WEBP up to 20 MB. The browser caps the complete import at 80 MB. The updated Worker is deployed to **ig**, and live image downloads have passed. The editor changes still need to be published with the website before users can use this flow there.
 
-The browser regression test `tools/test-instagram-import.cjs` uses the real pinned Decap bundle with mocked Firebase, IG and GitHub endpoints, including all writes. It checks blank initial fields, caption import, cancellation, download failure, draft previews, identifier-change protection and a single commit containing the cover, gallery and JSON. It needs Playwright and Chromium. Example, using dependencies installed outside the repository:
+The browser regression test `tools/test-instagram-import.cjs` uses the real pinned Decap bundle with mocked Firebase, IG and GitHub endpoints, including all writes. It checks blank initial fields, caption import, decoded cover and gallery images in the actual preview iframe before an identifier exists, cancellation cleanup, download failure, native draft previews after staging, Cupos updates and Ilimitado when cleared, identifier-change protection and a single commit containing the cover, gallery and JSON. It needs Playwright and Chromium. Example, using dependencies installed outside the repository:
 
 ```sh
 npm install --prefix /tmp/xuexi-ig-browser playwright --no-save --no-package-lock

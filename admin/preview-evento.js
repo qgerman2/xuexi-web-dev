@@ -2,15 +2,29 @@
 (function(){
   'use strict';
   var raiz = new URL('../', window.location.href);
+  var importacion = null;
+  var CAMBIO_IMPORTACION = 'xuexi-instagram-preview';
+  // Temporary preview only; Decap's draft retains repository paths and owns
+  // the actual media files. The importer clears this overlay on completion.
+  window.XuexiIGVistaPrevia = {
+    mostrar: function(fotos){
+      importacion = fotos?.length ? { ruta: window.location.hash, fotos: fotos.slice() } : null;
+      window.dispatchEvent(new Event(CAMBIO_IMPORTACION));
+    }
+  };
 
   window.registrarPreviewEvento = function(CMS){
-    CMS.registerPreviewStyle(new URL('assets/site.css?v=30', raiz).href);
-    CMS.registerPreviewStyle(new URL('assets/evento.css?v=30', raiz).href);
+    CMS.registerPreviewStyle(new URL('assets/site.css?v=31', raiz).href);
+    CMS.registerPreviewStyle(new URL('assets/evento.css?v=31', raiz).href);
     CMS.registerPreviewStyle('html,body{margin:0;padding:0}.frame-content{margin:0}', { raw: true });
 
     var PreviewEvento = window.createClass({
-      getInitialState: function(){ return { ampliada: false }; },
-      componentDidMount: function(){ this.actualizarGaleria(); },
+      getInitialState: function(){ return { ampliada: false, importacion: importacion }; },
+      refrescarImportacion: function(){ this.setState({ importacion: importacion }); },
+      componentDidMount: function(){
+        window.addEventListener(CAMBIO_IMPORTACION, this.refrescarImportacion);
+        this.actualizarGaleria();
+      },
       componentDidUpdate: function(anterior, estadoAnterior){
         this.actualizarGaleria();
         if (this.state.ampliada && !this.fotos.length) { this.cerrar(); return; }
@@ -25,6 +39,7 @@
         }
       },
       componentWillUnmount: function(){
+        window.removeEventListener(CAMBIO_IMPORTACION, this.refrescarImportacion);
         if (this.nodo) this.nodo.ownerDocument.body.style.overflow = this.overflowAnterior || '';
       },
       medio: function(valor){
@@ -101,6 +116,11 @@
         var h = window.h, self = this;
         var dato = this.props.entry.get('data');
         var evento = dato ? dato.toJS() : {};
+        var temporal = this.state.importacion;
+        if (temporal && temporal.ruta === window.location.hash){
+          evento.imagen = temporal.fotos[0];
+          evento.galeria = temporal.fotos.slice(1);
+        }
         var originales = window.XuexiEventoVista.fotosDelEvento(evento);
         evento.imagen = this.medio(evento.imagen);
         evento.galeria = originales.map(function(url){ return self.medio(url); });

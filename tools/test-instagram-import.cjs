@@ -26,7 +26,7 @@ test('Instagram import stages native Decap media and publishes photos + entry in
     headless: true, args: ['--no-sandbox']
   });
   t.after(() => browser.close());
-  const page = await browser.newPage({ ignoreHTTPSErrors: true });
+  const page = await browser.newPage({ ignoreHTTPSErrors: true, viewport: { width: 1920, height: 1080 } });
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   const requests = [];
@@ -45,7 +45,7 @@ test('Instagram import stages native Decap media and publishes photos + entry in
       contentType: 'application/javascript', path: process.env.DECAP_BUNDLE
     }));
   }
-  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==', 'base64');
+  const png = await fs.readFile(path.join(root, 'assets/logo.png'));
   let downloadFailure = false;
   await page.route('https://ig.qgerman2.workers.dev/**', route => {
     const url = route.request().url();
@@ -83,9 +83,15 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   });
   await page.goto('http://127.0.0.1:' + server.address().port + '/admin.html');
   const frame = page.frameLocator('#cms');
+  const preview = frame.frameLocator('iframe');
   const choose = page.locator('.ig-elegir');
   await choose.click();
   await page.getByText('Completa el identificador para importar las fotos.', { exact: true }).waitFor();
+  await preview.locator('.event-cover img').waitFor();
+  assert.ok(await preview.locator('.event-cover img').evaluate(async img => { await img.decode(); return img.naturalWidth > 0; }));
+  assert.ok(await preview.locator('#stage-img').evaluate(async img => { await img.decode(); return img.naturalWidth > 0; }));
+  assert.equal(await preview.locator('.event-description').innerText(), 'Descripción importada');
+  assert.match(await preview.locator('.event-meta-item').filter({ hasText: 'Cupos' }).innerText(), /Ilimitado/);
   assert.equal(await frame.getByLabel('Identificador').first().inputValue(), '');
   assert.equal(await frame.getByLabel('Título', { exact: true }).inputValue(), '');
   assert.equal(await frame.getByLabel(/^Detalle/).inputValue(), 'Descripción importada');
@@ -94,10 +100,12 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   }), /Espera a que termine/);
   await page.locator('#ig-cancelar').click();
   await page.getByText('Importación cancelada.', { exact: true }).waitFor();
+  await preview.locator('.event-cover img').waitFor({ state: 'detached' });
 
   downloadFailure = true;
   await choose.click();
   await page.getByText('No se pudo descargar una foto de Instagram. Vuelve a intentarlo.', { exact: true }).waitFor();
+  assert.equal(await preview.locator('.event-cover img').count(), 0);
   assert.equal(requests.filter(r => r.method !== 'GET' && r.p !== '/sesion').length, 0);
   downloadFailure = false;
   await choose.click();
@@ -108,6 +116,15 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   const previews = await page.locator('#cms').evaluate(el => Array.from(el.contentDocument.querySelectorAll('img')).map(img => img.src));
   assert.equal(previews.length, 2);
   assert.ok(previews.every(src => src.startsWith('blob:')));
+  // The temporary overlay is gone: native Decap media must keep the preview
+  // working, not just the images displayed by the form's image widgets.
+  assert.ok(await preview.locator('.event-cover img').evaluate(async img => { await img.decode(); return img.naturalWidth > 0; }));
+  assert.ok(await preview.locator('#stage-img').evaluate(async img => { await img.decode(); return img.naturalWidth > 0; }));
+  await frame.getByLabel('Cupos').fill('30');
+  await preview.locator('.event-meta-item').filter({ hasText: /Cupos\s*30/ }).waitFor();
+  await frame.getByLabel('Cupos').fill('');
+  await preview.locator('.event-meta-item').filter({ hasText: /Cupos\s*Ilimitado/ }).waitFor();
+  await frame.getByLabel('Cupos').fill('30');
   await frame.getByLabel('Título', { exact: true }).fill('Evento de prueba');
   await frame.getByText('Ahora', { exact: true }).click();
   await frame.getByLabel('Tipo', { exact: true }).click();
@@ -147,6 +164,7 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   assert.match(event.galeria[0], /^assets\/eventos\/prueba-ig\/ig-222-.*\.png$/);
   assert.equal(event.detalle, 'Descripción importada');
   assert.equal(event.instagram, 'https://www.instagram.com/p/fixture/');
+  assert.equal(event.cupos, 30);
   assert.ok([event.imagen, ...event.galeria].every(file => tree.some(node => node.path === file)));
   assert.equal(requests.filter(r => r.method === 'POST' && r.p.endsWith('/git/commits')).length, 1);
   assert.equal(requests.filter(r => r.method === 'PATCH').length, 1);

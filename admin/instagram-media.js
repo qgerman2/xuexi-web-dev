@@ -16,6 +16,19 @@
   }
 
   async function importar(opciones){
+    var vistas = [];
+    try {
+      return await preparar(opciones, function(file){
+        vistas.push(URL.createObjectURL(file));
+        opciones.onVistaPrevia(vistas.slice());
+      });
+    } finally {
+      opciones.onVistaPrevia(null);
+      vistas.forEach(function(url){ URL.revokeObjectURL(url); });
+    }
+  }
+
+  async function preparar(opciones, mostrar){
     var d = opciones.documento;
     var ventana = d.defaultView;
     var ruta = ventana.location.hash;
@@ -65,6 +78,9 @@
         throw new Error('Usa JPG, PNG o WEBP: máximo 20 MB por foto y 80 MB por importación.');
       }
       archivos.push(new ventana.File([foto], 'ig-' + medios[i].id + '-' + lote + '.' + extension, { type: foto.type }));
+      // Show downloaded images immediately, even before a new event has an ID.
+      // This overlay never puts temporary blob URLs into the entry's fields.
+      mostrar(archivos[archivos.length - 1]);
     }
 
     // New events deliberately start with a blank identifier. Download first,

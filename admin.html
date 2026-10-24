@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <title>Editor · Xuexi Club UC</title>
 <link rel="icon" href="assets/logo.png">
-<link rel="stylesheet" href="assets/site.css?v=30">
+<link rel="stylesheet" href="assets/site.css?v=31">
 <style>
   :root{
     --fondo:#1a1010; --panel:#241616; --linea:#4a3030;
@@ -193,9 +193,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-<script src="assets/nav.js?v=30"></script>
-<script src="assets/firebase-config.js?v=30"></script>
-<script src="admin/instagram-media.js?v=1"></script>
+<script src="assets/nav.js?v=31"></script>
+<script src="assets/firebase-config.js?v=31"></script>
+<script src="admin/instagram-media.js?v=2"></script>
 <script>
 /* Editor · Xuexi Club UC
  *
@@ -567,6 +567,9 @@
         post: post, usuario: user, documento: d,
         endpoint: new URL(INSTAGRAM).origin,
         signal: importacion.signal, onEstado: estadoInstagram,
+        onVistaPrevia: function(fotos){
+          documentoImportacion.defaultView?.XuexiIGVistaPrevia?.mostrar(fotos);
+        },
         inyectarFotos: inyectarFotos,
         comprobar: function(){
           if (firebase.auth().currentUser !== user || doc() !== documentoImportacion){
