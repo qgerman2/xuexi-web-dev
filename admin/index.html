@@ -141,8 +141,9 @@
     });
     var input = etiqueta && document.getElementById(etiqueta.htmlFor);
     if (!input) return;
-    input.readOnly = existente;
-    input.setAttribute('aria-readonly', String(existente));
+    var bloqueado = existente || input.dataset.importandoInstagram === 'true';
+    if (input.readOnly !== bloqueado) input.readOnly = bloqueado;
+    input.setAttribute('aria-readonly', String(bloqueado));
     var aviso = document.getElementById('aviso-identificador');
     if (existente && !aviso){
       aviso = document.createElement('p');
@@ -175,6 +176,11 @@
     s.onload = function(){
       try {
         window.registrarPreviewEvento(window.CMS);
+        window.CMS.registerEventListener({ name: 'preSave', handler: function(event){
+          if (event.entry.get('collection') === 'agenda'){
+            window.parent.PanelXuexi?.validarImportacion(event.entry);
+          }
+        } });
         window.CMS.init();
       } catch(e){
         puerta.classList.remove('oculto');

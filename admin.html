@@ -184,6 +184,7 @@
       </div>
       <p class="ig-ayuda">Elige una publicación para importar el texto y las fotos.</p>
       <p id="ig-estado" class="ig-estado" role="status" aria-live="polite"></p>
+      <button id="ig-cancelar" class="secundario" type="button" hidden>Cancelar importación</button>
       <div id="ig-lista" class="ig-lista" aria-label="Últimas publicaciones"></div>
     </aside>
   </div>
@@ -194,6 +195,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="assets/nav.js?v=30"></script>
 <script src="assets/firebase-config.js?v=30"></script>
+<script src="admin/instagram-media.js?v=1"></script>
 <script>
 /* Editor · Xuexi Club UC
  *
@@ -219,6 +221,9 @@
   var INSTAGRAM = 'https://ig.qgerman2.workers.dev/instagram/posts';
   var igPeticion = null;
   var igSeleccionando = false;
+  var igImportacion = null;
+  var igFotosImportadas = null;
+  var igCancelar = document.getElementById('ig-cancelar');
   var igEstado = document.getElementById('ig-estado');
   var igLista = document.getElementById('ig-lista');
   var igActualizar = document.getElementById('ig-actualizar');
@@ -265,6 +270,7 @@
   firebase.auth().onAuthStateChanged(function(user){
     // Retira el contenido de la sesión anterior antes de comprobar la nueva.
     if (igPeticion) igPeticion.abort();
+    if (igImportacion) igImportacion.abort();
     igLista.replaceChildren();
     taller.classList.remove('visible');
     puerta.classList.remove('oculto');
@@ -532,11 +538,15 @@
       return;
     }
     igSeleccionando = true;
+    var importacion = new AbortController();
+    igImportacion = importacion;
+    igCancelar.hidden = false;
     boton.disabled = true;
     estadoInstagram('Rellenando el evento…');
     try {
       if (!esAgenda) d.defaultView.location.hash = '/collections/agenda/new';
       await cuandoHayaFormulario('Detalle', 25000);
+      importacion.signal.throwIfAborted();
       if (firebase.auth().currentUser !== user || !boton.isConnected) return;
       d = doc();
       if (!/^#\/collections\/agenda\/(new|entries\/[^/]+)\/?$/.test(d.defaultView.location.hash)){
@@ -552,24 +562,36 @@
       if (n !== Object.keys(valores).length){
         throw new Error('No se pudieron rellenar todos los campos. Revisa el formulario.');
       }
-      var medios = post.media_type === 'CAROUSEL_ALBUM' ? (post.children?.data || []) : [post];
-      var fotos = medios.filter(function(m){ return m.media_type === 'IMAGE'; })
-        .map(function(m){ return urlSegura(m.media_url); }).filter(Boolean);
-      if (!inyectarFotos('Imagen de portada', fotos.slice(0, 1), false)
-          || !inyectarFotos('Galería de fotos', fotos.slice(1), true)){
-        throw new Error('No se pudieron importar las fotos. Revisa el formulario.');
-      }
+      var documentoImportacion = d;
+      igFotosImportadas = await window.XuexiIGMedios.importar({
+        post: post, usuario: user, documento: d,
+        endpoint: new URL(INSTAGRAM).origin,
+        signal: importacion.signal, onEstado: estadoInstagram,
+        inyectarFotos: inyectarFotos,
+        comprobar: function(){
+          if (firebase.auth().currentUser !== user || doc() !== documentoImportacion){
+            throw new Error('La sesión cambió. Vuelve a entrar al editor.');
+          }
+        }
+      });
       igLista.querySelectorAll('.ig-elegir').forEach(function(b){
         b.setAttribute('aria-pressed', b === boton ? 'true' : 'false');
       });
-      estadoInstagram('Descripción y fotos importadas.');
+      estadoInstagram('Importado. Guarda el evento para subir las fotos.');
     } catch(e){
-      estadoInstagram(e.message || 'No se pudo rellenar el evento.', true);
+      estadoInstagram(e.name === 'AbortError' ? 'Importación cancelada.' :
+        (e.message || 'No se pudo rellenar el evento.'), true);
     } finally {
       igSeleccionando = false;
+      igImportacion = null;
+      igCancelar.hidden = true;
       boton.disabled = false;
     }
   }
+
+  igCancelar.addEventListener('click', function(){
+    if (igImportacion) igImportacion.abort();
+  });
 
   igActualizar.addEventListener('click', function(){
     var user = firebase.auth().currentUser;
@@ -580,7 +602,16 @@
   window.PanelXuexi = {
     inyectar: inyectar,
     cuandoHayaFormulario: cuandoHayaFormulario,
-    documentoEditor: doc
+    documentoEditor: doc,
+    validarImportacion: function(entry){
+      if (igSeleccionando) throw new Error('Espera a que termine la importación de fotos o cancélala.');
+      if (!igFotosImportadas?.id) return;
+      var data = entry.get('data');
+      var imagenes = [data.get('imagen')].concat(data.get('galeria')?.toJS?.() || data.get('galeria') || []);
+      if (data.get('id') !== igFotosImportadas.id && imagenes.some(function(ruta){
+        return igFotosImportadas.rutas.includes(ruta);
+      })) throw new Error('El identificador cambió. Vuelve a importar las fotos antes de guardar.');
+    }
   };
 })();
 </script>

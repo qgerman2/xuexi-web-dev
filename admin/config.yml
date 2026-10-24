@@ -65,6 +65,8 @@ collections:
         pattern: ['^[a-z0-9]+(-[a-z0-9]+)*$', 'Solo minúsculas, números y guiones. Ej. taller-caligrafia']
         hint: 'Es la dirección del evento (/evento/<id>/).'
       - { label: Título, name: titulo, widget: string }
+      - { label: Imagen de portada, name: imagen, widget: image, required: false, allow_multiple: false,
+          hint: 'La que se ve en la agenda, encabeza la subpágina y sale al compartir el enlace.' }
       - label: Estado
         name: estado
         widget: select
@@ -173,8 +175,6 @@ collections:
         required: false
         pattern: ['^.{0,2}$', 'Como mucho dos caracteres']
         hint: 'Se muestra si no hay imagen de portada. Ej. 书'
-      - { label: Imagen de portada, name: imagen, widget: image, required: false, allow_multiple: false,
-          hint: 'La que se ve en la agenda, encabeza la subpágina y sale al compartir el enlace.' }
       - label: Galería de fotos
         name: galeria
         widget: image
