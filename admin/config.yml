@@ -101,7 +101,7 @@ collections:
         required: false
         value_type: int
         min: 0
-        hint: 'Vacío: ilimitado. 0: ocultar.'
+        hint: 'Vacío o 0: no se muestra.'
       - label: Detalle
         name: detalle
         widget: text

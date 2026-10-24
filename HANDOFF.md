@@ -63,7 +63,7 @@ The event `id` determines its public URL and source JSON filename. It must not c
 | `instagram` | Optional HTTPS Instagram post URL. |
 | `imagen` | Cover/banner image. |
 | `galeria` | Remaining carousel images; source strings or arrays are normalized by the aggregator. |
-| `cupos` | Optional number, beside Lugar in Decap. The label is Capacidad in Decap and the information card. Blank or missing values display Ilimitado; an explicit 0 hides the row. The stored field remains cupos. |
+| `cupos` | Optional number, beside Lugar in Decap. The label is Capacidad in Decap and the information card. Blank, missing and zero values hide the row from the start; only positive integers are displayed. The stored field remains cupos. |
 
 Registration is offered for future events with `estado: abierto` or `online`. Full, forthcoming or completed events do not show an open-registration action. An absent registration URL retains the existing generic form fallback.
 
@@ -96,7 +96,7 @@ The custom preview:
 - Does not initialize Firebase or perform content writes.
 - Reflects responsive breakpoints at the preview pane's actual width, so a narrow pane shows the mobile stack.
 
-All shared `assets/` references currently use **`?v=32`**, consistently across pages. `admin/preview-evento.js` uses `?v=4`; `admin/instagram-media.js` uses `?v=5`. When changing shared assets, update cache versions together and regenerate event pages. Earlier mismatched Firebase script versions caused login/portal redirect loops.
+All shared `assets/` references currently use **`?v=33`**, consistently across pages. `admin/preview-evento.js` uses `?v=4`; `admin/instagram-media.js` uses `?v=5`. When changing shared assets, update cache versions together and regenerate event pages. Earlier mismatched Firebase script versions caused login/portal redirect loops.
 
 ## Editor access and navigation
 
@@ -199,7 +199,7 @@ Cancellation is available during initial downloads and disabled briefly while na
 
 New Worker route: **GET `/instagram/media/<numeric-media-id>`**. It performs the same Firebase session and current-admin checks as `/instagram/posts`, finds the image in the authenticated IG account's latest ten posts (including carousel children), and fetches its current URL. It accepts no caller-supplied URL, restricts HTTPS destinations to `fbcdn.net`/`cdninstagram.com`, rejects redirects, never forwards credentials to the CDN, and accepts only JPG/PNG/WEBP up to 20 MB. The browser caps the complete import at 80 MB. The updated Worker is deployed to **ig**, and live image downloads have passed. The editor changes still need to be published with the website before users can use this flow there.
 
-The browser regression test `tools/test-instagram-import.cjs` uses the real pinned Decap bundle with mocked Firebase, IG and GitHub endpoints, including all writes. It checks blank initial fields, caption import, loaded cover/gallery images in the actual preview iframe before an identifier exists, cancellation cleanup, download failure, native draft previews, Capacidad updates, hiding the row at 0 and Ilimitado when cleared. It also checks repeated quiet identifier edits: no media dialogs, status churn, focus stealing or additional downloads; both widget thumbnails and preview photos remain loaded. Imports finish with blank and invalid identifiers; legacy photos retain their original public paths. Publishing preserves a swapped cover/gallery and creates one commit containing two photos under `assets/eventos/medios/` plus the JSON named after the final event identifier. Identifiers lock after publishing. It needs Playwright and Chromium. Example, using dependencies installed outside the repository:
+The browser regression test `tools/test-instagram-import.cjs` uses the real pinned Decap bundle with mocked Firebase, IG and GitHub endpoints, including all writes. It checks blank initial fields, caption import, loaded cover/gallery images in the actual preview iframe before an identifier exists, cancellation cleanup, download failure, native draft previews, Capacidad updates, hiding the row initially and when zero or cleared. It also checks repeated quiet identifier edits: no media dialogs, status churn, focus stealing or additional downloads; both widget thumbnails and preview photos remain loaded. Imports finish with blank and invalid identifiers; legacy photos retain their original public paths. Publishing preserves a swapped cover/gallery and creates one commit containing two photos under `assets/eventos/medios/` plus the JSON named after the final event identifier. Identifiers lock after publishing. It needs Playwright and Chromium. Example, using dependencies installed outside the repository:
 
 ```sh
 npm install --prefix /tmp/xuexi-ig-browser playwright --no-save --no-package-lock

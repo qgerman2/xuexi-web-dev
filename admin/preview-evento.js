@@ -49,8 +49,8 @@
       name: 'image', controlComponent: ImagenEstable, previewComponent: imagen.preview,
       schema: imagen.schema, allowMapValue: imagen.allowMapValue, globalStyles: imagen.globalStyles
     });
-    CMS.registerPreviewStyle(new URL('assets/site.css?v=32', raiz).href);
-    CMS.registerPreviewStyle(new URL('assets/evento.css?v=32', raiz).href);
+    CMS.registerPreviewStyle(new URL('assets/site.css?v=33', raiz).href);
+    CMS.registerPreviewStyle(new URL('assets/evento.css?v=33', raiz).href);
     CMS.registerPreviewStyle('html,body{margin:0;padding:0}.frame-content{margin:0}', { raw: true });
 
     var PreviewEvento = window.createClass({

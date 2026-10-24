@@ -79,9 +79,7 @@
     var RELOJ = icono('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>');
     var PERSONAS = icono('<circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0112 0v2M16 5a3 3 0 010 6M21 21v-2a6 6 0 00-3-5.2"/>');
     var cupos = Number(ev.cupos);
-    var capacidadVacia = ev.cupos == null || String(ev.cupos).trim() === '';
-    var mostrarCapacidad = capacidadVacia || (Number.isSafeInteger(cupos) && cupos > 0);
-    var cuposTexto = Number.isSafeInteger(cupos) && cupos > 0 ? String(cupos) : 'Ilimitado';
+    var mostrarCapacidad = Number.isSafeInteger(cupos) && cupos > 0;
     var mediaPortada = ev.imagen
       ? '<img src="' + esc(ruta(ev.imagen, 'assets/')) + '" alt="' + esc(ev.titulo) + '" fetchpriority="high">'
       : '<span class="glyph zh" aria-hidden="true">' + esc(ev.hanzi || '学') + '</span>';
@@ -140,7 +138,7 @@
             (fechaConfirmada ? '<time datetime="' + esc(ev.fecha) + '">' + esc(fechaTexto) + '</time>' : 'Por confirmar') + '</div></div>' +
           '<div class="event-meta-item">' + RELOJ + '<div><span class="event-meta-label">Horario</span>' + esc(horario) + '</div></div>' +
           '<div class="event-meta-item">' + PIN + '<div><span class="event-meta-label">Lugar</span>' + esc(lugar) + '</div></div>' +
-          (mostrarCapacidad ? '<div class="event-meta-item">' + PERSONAS + '<div><span class="event-meta-label">Capacidad</span>' + cuposTexto + '</div></div>' : '') +
+          (mostrarCapacidad ? '<div class="event-meta-item">' + PERSONAS + '<div><span class="event-meta-label">Capacidad</span>' + String(cupos) + '</div></div>' : '') +
         '</div>' +
         '<div class="event-actions">' + accion +
           (enlaceInstagram ? '<a class="event-instagram" href="' + esc(enlaceInstagram) + '" target="_blank" rel="noopener noreferrer">Ver en Instagram <span aria-hidden="true">↗</span></a>' : '') +

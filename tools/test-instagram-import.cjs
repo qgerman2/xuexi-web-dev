@@ -112,7 +112,7 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   await preview.locator('.event-cover img').waitFor();
   assert.ok(await imagenCargada('.event-cover img'));
   assert.equal(await preview.locator('.event-description').innerText(), 'Descripción importada');
-  assert.match(await preview.locator('.event-meta-item').filter({ hasText: 'Capacidad' }).innerText(), /Ilimitado/);
+  assert.equal(await preview.locator('.event-meta-item').filter({ hasText: 'Capacidad' }).count(), 0);
   assert.equal(await frame.getByLabel('Identificador').first().inputValue(), '');
   assert.equal(await frame.getByLabel('Título', { exact: true }).inputValue(), '');
   assert.equal(await frame.getByLabel(/^Detalle/).inputValue(), 'Descripción importada');
@@ -168,7 +168,7 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   await frame.getByLabel('Capacidad').fill('0');
   await preview.locator('.event-meta-item').filter({ hasText: 'Capacidad' }).waitFor({ state: 'detached' });
   await frame.getByLabel('Capacidad').fill('');
-  await preview.locator('.event-meta-item').filter({ hasText: /Capacidad\s*Ilimitado/ }).waitFor();
+  await preview.locator('.event-meta-item').filter({ hasText: 'Capacidad' }).waitFor({ state: 'detached' });
   await frame.getByLabel('Capacidad').fill('30');
   await frame.getByLabel('Título', { exact: true }).fill('Evento de prueba');
   await frame.getByText('Ahora', { exact: true }).click();
