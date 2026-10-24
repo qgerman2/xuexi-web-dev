@@ -91,7 +91,7 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   assert.ok(await preview.locator('.event-cover img').evaluate(async img => { await img.decode(); return img.naturalWidth > 0; }));
   assert.ok(await preview.locator('#stage-img').evaluate(async img => { await img.decode(); return img.naturalWidth > 0; }));
   assert.equal(await preview.locator('.event-description').innerText(), 'Descripción importada');
-  assert.match(await preview.locator('.event-meta-item').filter({ hasText: 'Cupos' }).innerText(), /Ilimitado/);
+  assert.match(await preview.locator('.event-meta-item').filter({ hasText: 'Capacidad' }).innerText(), /Ilimitado/);
   assert.equal(await frame.getByLabel('Identificador').first().inputValue(), '');
   assert.equal(await frame.getByLabel('Título', { exact: true }).inputValue(), '');
   assert.equal(await frame.getByLabel(/^Detalle/).inputValue(), 'Descripción importada');
@@ -120,11 +120,13 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   // working, not just the images displayed by the form's image widgets.
   assert.ok(await preview.locator('.event-cover img').evaluate(async img => { await img.decode(); return img.naturalWidth > 0; }));
   assert.ok(await preview.locator('#stage-img').evaluate(async img => { await img.decode(); return img.naturalWidth > 0; }));
-  await frame.getByLabel('Cupos').fill('30');
-  await preview.locator('.event-meta-item').filter({ hasText: /Cupos\s*30/ }).waitFor();
-  await frame.getByLabel('Cupos').fill('');
-  await preview.locator('.event-meta-item').filter({ hasText: /Cupos\s*Ilimitado/ }).waitFor();
-  await frame.getByLabel('Cupos').fill('30');
+  await frame.getByLabel('Capacidad').fill('30');
+  await preview.locator('.event-meta-item').filter({ hasText: /Capacidad\s*30/ }).waitFor();
+  await frame.getByLabel('Capacidad').fill('0');
+  await preview.locator('.event-meta-item').filter({ hasText: 'Capacidad' }).waitFor({ state: 'detached' });
+  await frame.getByLabel('Capacidad').fill('');
+  await preview.locator('.event-meta-item').filter({ hasText: /Capacidad\s*Ilimitado/ }).waitFor();
+  await frame.getByLabel('Capacidad').fill('30');
   await frame.getByLabel('Título', { exact: true }).fill('Evento de prueba');
   await frame.getByText('Ahora', { exact: true }).click();
   await frame.getByLabel('Tipo', { exact: true }).click();

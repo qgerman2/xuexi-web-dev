@@ -100,13 +100,13 @@ collections:
         required: false
         pattern: ['^([01][0-9]|2[0-3]):[0-5][0-9]$', 'Usa HH:MM de 24 horas. Ej. 11:30']
       - { label: Lugar, name: lugar, widget: string, required: false }
-      - label: Cupos
+      - label: Capacidad
         name: cupos
         widget: number
         required: false
         value_type: int
         min: 0
-        hint: 'Vacío: ilimitado.'
+        hint: 'Vacío: ilimitado. 0: ocultar.'
       - label: Detalle
         name: detalle
         widget: text
