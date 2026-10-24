@@ -47,11 +47,15 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   }
   const png = await fs.readFile(path.join(root, 'assets/logo.png'));
   let downloadFailure = false;
+  let downloads = 0;
   await page.route('https://ig.qgerman2.workers.dev/**', route => {
     const url = route.request().url();
-    if (url.includes('/instagram/media/')) return route.fulfill(downloadFailure
-      ? { status: 502, json: { error: 'Fixture download failed' } }
-      : { contentType: 'image/png', body: Buffer.concat([png, Buffer.from(url)]) });
+    if (url.includes('/instagram/media/')) {
+      downloads++;
+      return route.fulfill(downloadFailure
+        ? { status: 502, json: { error: 'Fixture download failed' } }
+        : { contentType: 'image/png', body: Buffer.concat([png, Buffer.from(url)]) });
+    }
     return route.fulfill({ json: { data: [{
       id: '123', caption: 'Descripción importada', media_type: 'CAROUSEL_ALBUM',
       permalink: 'https://www.instagram.com/p/fixture/', children: { data: [
@@ -84,12 +88,21 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   await page.goto('http://127.0.0.1:' + server.address().port + '/admin.html');
   const frame = page.frameLocator('#cms');
   const preview = frame.frameLocator('iframe');
+  async function imagenCargada(selector) {
+    const fin = Date.now() + 10000;
+    while (Date.now() < fin) {
+      const imagen = preview.locator(selector);
+      if (await imagen.count() && await imagen.evaluate(img => img.complete && img.naturalWidth > 0)) return true;
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    return false;
+  }
   const choose = page.locator('.ig-elegir');
   await choose.click();
   await page.getByText('Completa el identificador para importar las fotos.', { exact: true }).waitFor();
   await preview.locator('.event-cover img').waitFor();
-  assert.ok(await preview.locator('.event-cover img').evaluate(async img => { await img.decode(); return img.naturalWidth > 0; }));
-  assert.ok(await preview.locator('#stage-img').evaluate(async img => { await img.decode(); return img.naturalWidth > 0; }));
+  assert.ok(await imagenCargada('.event-cover img'));
+  assert.ok(await imagenCargada('#stage-img'));
   assert.equal(await preview.locator('.event-description').innerText(), 'Descripción importada');
   assert.match(await preview.locator('.event-meta-item').filter({ hasText: 'Capacidad' }).innerText(), /Ilimitado/);
   assert.equal(await frame.getByLabel('Identificador').first().inputValue(), '');
@@ -118,8 +131,8 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   assert.ok(previews.every(src => src.startsWith('blob:')));
   // The temporary overlay is gone: native Decap media must keep the preview
   // working, not just the images displayed by the form's image widgets.
-  assert.ok(await preview.locator('.event-cover img').evaluate(async img => { await img.decode(); return img.naturalWidth > 0; }));
-  assert.ok(await preview.locator('#stage-img').evaluate(async img => { await img.decode(); return img.naturalWidth > 0; }));
+  assert.ok(await imagenCargada('.event-cover img'));
+  assert.ok(await imagenCargada('#stage-img'));
   await frame.getByLabel('Capacidad').fill('30');
   await preview.locator('.event-meta-item').filter({ hasText: /Capacidad\s*30/ }).waitFor();
   await frame.getByLabel('Capacidad').fill('0');
@@ -135,21 +148,40 @@ test('Instagram import stages native Decap media and publishes photos + entry in
     await frame.getByRole('button', { name: 'Publicar', exact: true }).click();
     await frame.getByText('Publicar ahora', { exact: true }).click();
   };
-  await frame.getByLabel('Identificador').first().fill('');
-  await frame.getByLabel('Identificador').first().fill('otro-id');
-  assert.equal(await frame.getByLabel('Identificador').first().inputValue(), 'otro-id');
-  // Pinned Decap shows a toast and also rejects the publish action's promise
-  // when a preSave validator throws. Capture that expected rejection only.
-  const validationRejection = page.waitForEvent('pageerror');
-  await publish();
-  await frame.getByText(/El identificador cambió\. Vuelve a importar/).first().waitFor();
-  assert.equal((await validationRejection).message, 'Uncaught (in promise) #<Object>');
-  assert.equal(pageErrors.length, 1);
-  pageErrors.length = 0;
-  assert.equal(requests.filter(r => r.method !== 'GET' && r.p !== '/sesion').length, 0);
-  await frame.getByLabel('Identificador').first().fill('');
-  await frame.getByLabel('Identificador').first().fill('prueba-ig');
+  // Swapping the cover/gallery must survive automatic identifier migrations.
+  await page.locator('#cms').evaluate(el => {
+    const editor = el.contentWindow.CMS.editor;
+    const data = editor.getCurrentEntry().data;
+    const result = editor.applyFieldPatch([
+      { path: 'imagen', value: data.galeria[0] },
+      { path: 'galeria', value: [data.imagen] }
+    ]);
+    if (result.rejected.length) throw new Error('Could not swap draft photos');
+  });
+  const downloadedBeforeRename = downloads;
+  await frame.getByLabel('Identificador').first().click();
+  await frame.getByLabel('Identificador').first().press('ControlOrMeta+A');
+  await frame.getByLabel('Identificador').first().press('Backspace');
+  await page.getByText('Completa el identificador para actualizar las fotos.', { exact: true }).waitFor();
+  await page.locator('#ig-cancelar').click();
+  await page.getByText('Cambio cancelado.', { exact: true }).waitFor();
   assert.equal(await frame.getByLabel('Identificador').first().inputValue(), 'prueba-ig');
+  assert.ok(await imagenCargada('.event-cover img'));
+  for (const id of ['prueba-ig', 'otro-id', 'evento-final']) {
+    await frame.getByLabel('Identificador').first().click();
+    await frame.getByLabel('Identificador').first().press('ControlOrMeta+A');
+    await frame.getByLabel('Identificador').first().press('Backspace');
+    await page.getByText('Completa el identificador para actualizar las fotos.', { exact: true }).waitFor();
+    assert.ok(await imagenCargada('.event-cover img'));
+    await frame.getByLabel('Identificador').first().fill(id);
+    await frame.getByLabel('Identificador').first().press('Tab');
+    await page.getByText('Identificador y fotos actualizados.', { exact: true }).waitFor();
+    assert.equal(await frame.getByLabel('Identificador').first().inputValue(), id);
+    assert.ok(await imagenCargada('.event-cover img'));
+    assert.ok(await imagenCargada('#stage-img'));
+    assert.equal(downloads, downloadedBeforeRename, 'renaming reuses downloaded files');
+    assert.equal(requests.filter(r => r.method !== 'GET' && r.p !== '/sesion').length, 0);
+  }
   await publish();
   const deadline = Date.now() + 15000;
   while (!requests.some(r => r.method === 'PATCH') && Date.now() < deadline) {
@@ -159,16 +191,20 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   assert.ok(tree, 'save creates a Git tree: ' + JSON.stringify(requests.map(r => [r.method, r.p])) + '\n' +
     await page.locator('#cms').evaluate(el => el.contentDocument.body.innerText.slice(0, 1400)));
   assert.equal(tree.length, 3, 'one event JSON and two images');
-  const eventFile = tree.find(file => file.path === 'data/eventos/prueba-ig.json');
+  const eventFile = tree.find(file => file.path === 'data/eventos/evento-final.json');
   const blob = requests.find(r => r.response?.sha === eventFile.sha).body;
   const event = JSON.parse(Buffer.from(blob.content, 'base64').toString());
-  assert.match(event.imagen, /^assets\/eventos\/prueba-ig\/ig-111-.*\.png$/);
-  assert.match(event.galeria[0], /^assets\/eventos\/prueba-ig\/ig-222-.*\.png$/);
+  assert.equal(event.id, 'evento-final');
+  assert.equal(event.titulo, 'Evento de prueba');
+  assert.match(event.imagen, /^assets\/eventos\/evento-final\/ig-222-.*\.png$/);
+  assert.match(event.galeria[0], /^assets\/eventos\/evento-final\/ig-111-.*\.png$/);
   assert.equal(event.detalle, 'Descripción importada');
   assert.equal(event.instagram, 'https://www.instagram.com/p/fixture/');
   assert.equal(event.cupos, 30);
   assert.ok([event.imagen, ...event.galeria].every(file => tree.some(node => node.path === file)));
   assert.equal(requests.filter(r => r.method === 'POST' && r.p.endsWith('/git/commits')).length, 1);
   assert.equal(requests.filter(r => r.method === 'PATCH').length, 1);
+  await page.waitForFunction(() => document.getElementById('cms').contentWindow.location.hash.includes('/entries/evento-final'));
+  assert.equal(await frame.getByLabel('Identificador').first().evaluate(input => input.readOnly), true);
   assert.deepEqual(pageErrors, []);
 });

@@ -20,7 +20,16 @@
     try {
       return await preparar(opciones, function(file){
         vistas.push(URL.createObjectURL(file));
-        opciones.onVistaPrevia(vistas.slice());
+        if (!opciones.anterior) return opciones.onVistaPrevia(vistas.slice());
+        if (vistas.length !== opciones.archivos.length) return;
+        var actuales = opciones.leerImagenes();
+        function temporal(valor){
+          var indice = opciones.anterior.rutas.indexOf(valor);
+          return indice === -1 ? valor : vistas[indice];
+        }
+        var galeria = Array.isArray(actuales.galeria) ? actuales.galeria :
+          (actuales.galeria ? [actuales.galeria] : []);
+        opciones.onVistaPrevia([temporal(actuales.imagen || '')].concat(galeria.map(temporal)));
       });
     } finally {
       opciones.onVistaPrevia(null);
@@ -51,11 +60,12 @@
         await new Promise(function(resolve){ setTimeout(resolve, 100); });
       }
     }
-    var post = opciones.post;
+    var post = opciones.post || {};
     var medios = (post.media_type === 'CAROUSEL_ALBUM' ? (post.children?.data || []) : [post])
       .filter(function(m){ return m.media_type === 'IMAGE' && /^\d{1,30}$/.test(m.id); });
-    if (!medios.length) return { id: null, rutas: [] };
-    var archivos = [];
+    var archivos = opciones.archivos ? opciones.archivos.slice() : [];
+    if (!medios.length && !archivos.length) return { id: null, rutas: [], archivos: [] };
+    archivos.forEach(mostrar);
     var total = 0;
     var lote = crypto.randomUUID().slice(0, 8);
     for (var i = 0; i < medios.length; i++){
@@ -85,7 +95,9 @@
 
     // New events deliberately start with a blank identifier. Download first,
     // then wait for the editor to choose it before resolving the media folder.
-    opciones.onEstado('Completa el identificador para importar las fotos.');
+    opciones.onEstado(opciones.anterior
+      ? 'Completa el identificador para actualizar las fotos.'
+      : 'Completa el identificador para importar las fotos.');
     var ultimoId = '';
     var desde = 0;
     var identificador = await esperar(function(){
@@ -95,6 +107,15 @@
       return input !== d.activeElement && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(valor) && Date.now() - desde >= 700 && valor;
     });
     var inputId = campo(d, 'Identificador');
+    if (opciones.anterior?.id === identificador) return opciones.anterior;
+    if (opciones.anterior){
+      // Avoid native overwrite prompts. The bytes (and therefore Decap's
+      // SHA-based draft media IDs) stay the same, replacing old queue entries.
+      archivos = archivos.map(function(file){
+        var nombre = file.name.replace(/-[a-f0-9]{8}(?=\.[^.]+$)/, '-' + lote);
+        return new ventana.File([file], nombre, { type: file.type });
+      });
+    }
     var soloLectura = inputId.readOnly;
     inputId.dataset.importandoInstagram = 'true';
     inputId.readOnly = true;
@@ -138,11 +159,23 @@
     // Wait for the media dialog's close transition before touching the widgets.
     await esperar(function(){ return !d.querySelector('[role="dialog"] input[type="file"]'); }, 5000);
     var rutas = archivos.map(function(file){ return 'assets/eventos/' + identificador + '/' + file.name; });
-    if (!opciones.inyectarFotos('Imagen de portada', rutas.slice(0, 1), false) ||
-        !opciones.inyectarFotos('Galería de fotos', rutas.slice(1), true)){
+    var portada = rutas.slice(0, 1);
+    var galeria = rutas.slice(1);
+    if (opciones.anterior){
+      var actuales = opciones.leerImagenes();
+      function actualizar(valor){
+        var indice = opciones.anterior.rutas.indexOf(valor);
+        return indice === -1 ? valor : rutas[indice];
+      }
+      portada = actuales.imagen ? [actualizar(actuales.imagen)] : [];
+      galeria = (Array.isArray(actuales.galeria) ? actuales.galeria :
+        (actuales.galeria ? [actuales.galeria] : [])).map(actualizar);
+    }
+    if (!opciones.inyectarFotos('Imagen de portada', portada, false) ||
+        !opciones.inyectarFotos('Galería de fotos', galeria, true)){
       throw new Error('No se pudieron rellenar las fotos. Revisa el formulario.');
     }
-    return { id: identificador, rutas: rutas };
+    return { id: identificador, rutas: rutas, archivos: archivos };
   }
 
   window.XuexiIGMedios = { importar: importar };

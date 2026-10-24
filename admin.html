@@ -195,7 +195,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="assets/nav.js?v=32"></script>
 <script src="assets/firebase-config.js?v=32"></script>
-<script src="admin/instagram-media.js?v=2"></script>
+<script src="admin/instagram-media.js?v=3"></script>
 <script>
 /* Editor · Xuexi Club UC
  *
@@ -223,6 +223,7 @@
   var igSeleccionando = false;
   var igImportacion = null;
   var igFotosImportadas = null;
+  var igDejarDeObservarId = null;
   var igCancelar = document.getElementById('ig-cancelar');
   var igEstado = document.getElementById('ig-estado');
   var igLista = document.getElementById('ig-lista');
@@ -271,6 +272,8 @@
     // Retira el contenido de la sesión anterior antes de comprobar la nueva.
     if (igPeticion) igPeticion.abort();
     if (igImportacion) igImportacion.abort();
+    if (igDejarDeObservarId) igDejarDeObservarId();
+    igFotosImportadas = null;
     igLista.replaceChildren();
     taller.classList.remove('visible');
     puerta.classList.remove('oculto');
@@ -394,6 +397,13 @@
   function estadoInstagram(texto, error){
     igEstado.textContent = texto;
     igEstado.dataset.error = error ? 'true' : 'false';
+  }
+
+  function estadoImportacion(texto){
+    // Replacing native draft queue entries must finish before cancellation;
+    // downloads and the wait for an identifier remain cancellable.
+    igCancelar.disabled = /^Preparando foto/.test(texto);
+    estadoInstagram(texto);
   }
 
   function urlSegura(valor, instagram){
@@ -566,7 +576,7 @@
       igFotosImportadas = await window.XuexiIGMedios.importar({
         post: post, usuario: user, documento: d,
         endpoint: new URL(INSTAGRAM).origin,
-        signal: importacion.signal, onEstado: estadoInstagram,
+        signal: importacion.signal, onEstado: estadoImportacion,
         onVistaPrevia: function(fotos){
           documentoImportacion.defaultView?.XuexiIGVistaPrevia?.mostrar(fotos);
         },
@@ -577,6 +587,7 @@
           }
         }
       });
+      observarIdentificador(d, user);
       igLista.querySelectorAll('.ig-elegir').forEach(function(b){
         b.setAttribute('aria-pressed', b === boton ? 'true' : 'false');
       });
@@ -588,7 +599,72 @@
       igSeleccionando = false;
       igImportacion = null;
       igCancelar.hidden = true;
+      igCancelar.disabled = false;
       boton.disabled = false;
+    }
+  }
+
+  function observarIdentificador(d, user){
+    if (igDejarDeObservarId) igDejarDeObservarId();
+    if (!igFotosImportadas?.archivos?.length) return;
+    var ventana = d.defaultView;
+    var ruta = ventana.location.hash;
+    function dejar(){
+      d.removeEventListener('input', cambio);
+      ventana.removeEventListener('hashchange', salir);
+      igDejarDeObservarId = null;
+    }
+    function salir(){ dejar(); igFotosImportadas = null; }
+    function cambio(event){
+      var input = campoPorEtiqueta(d, 'Identificador');
+      if (event.target !== input) return;
+      if (!igSeleccionando && !input.readOnly && ventana.location.hash === ruta &&
+          igFotosImportadas?.id && input.value !== igFotosImportadas.id){
+        actualizarIdentificador(d, user);
+      }
+    }
+    d.addEventListener('input', cambio);
+    ventana.addEventListener('hashchange', salir);
+    igDejarDeObservarId = dejar;
+  }
+
+  async function actualizarIdentificador(d, user){
+    var anterior = igFotosImportadas;
+    var ruta = d.defaultView.location.hash;
+    var importacion = new AbortController();
+    igSeleccionando = true;
+    igImportacion = importacion;
+    igCancelar.hidden = false;
+    try {
+      igFotosImportadas = await window.XuexiIGMedios.importar({
+        archivos: anterior.archivos, anterior: anterior, documento: d,
+        signal: importacion.signal, onEstado: estadoImportacion,
+        onVistaPrevia: function(fotos){ d.defaultView?.XuexiIGVistaPrevia?.mostrar(fotos); },
+        inyectarFotos: inyectarFotos,
+        leerImagenes: function(){
+          var actual = d.defaultView.CMS.editor.getCurrentEntry();
+          if (!actual || actual.collection !== 'agenda') throw new Error('Abre el evento para actualizar sus fotos.');
+          return actual.data;
+        },
+        comprobar: function(){
+          if (firebase.auth().currentUser !== user || doc() !== d){
+            throw new Error('La sesión cambió. Vuelve a entrar al editor.');
+          }
+        }
+      });
+      estadoInstagram('Identificador y fotos actualizados.');
+    } catch(e){
+      if (e.name === 'AbortError' && doc() === d && firebase.auth().currentUser === user &&
+          d.defaultView.location.hash === ruta){
+        inyectar({ 'Identificador': anterior.id });
+      }
+      estadoInstagram(e.name === 'AbortError' ? 'Cambio cancelado.' :
+        (e.message || 'No se pudieron actualizar las fotos.'), true);
+    } finally {
+      igSeleccionando = false;
+      igImportacion = null;
+      igCancelar.hidden = true;
+      igCancelar.disabled = false;
     }
   }
 
