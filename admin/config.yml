@@ -35,10 +35,8 @@ collections:
     create: true
     extension: json
     format: json
-    # El identificador es 'id', no el título: de ahí sale {{slug}}, que
-    # nombra el archivo Y la carpeta de medios. Si fuera el título,
-    # la carpeta llevaría acentos y hanzi, y se movería al reescribir
-    # el título. En la lista se sigue viendo el título por 'summary'.
+    # El identificador nombra el archivo y la URL, independientemente de
+    # las imágenes. En la lista se muestra el título por 'summary'.
     identifier_field: id
     slug: '{{fields.id}}'
     summary: '{{fecha}} · {{titulo}}'
@@ -48,13 +46,10 @@ collections:
       - { field: fecha, default_sort: desc }
       - titulo
       - tipo
-    # Cada evento sube sus fotos a su propia carpeta. Así el selector de
-    # imágenes muestra SOLO las de este evento y no el repositorio entero:
-    # en un evento nuevo aparece vacío, o sea, directo a "subir".
-    # Ojo: {{slug}} es el Identificador, así que hay que rellenarlo ANTES
-    # de subir nada, o las fotos acaban en una carpeta equivocada.
-    media_folder: '/assets/eventos/{{slug}}'
-    public_folder: 'assets/eventos/{{slug}}'
+    # Carpeta estable: se pueden subir/importar fotos antes de elegir el id.
+    # Los enlaces a fotos antiguas en carpetas por evento siguen funcionando.
+    media_folder: '/assets/eventos/medios'
+    public_folder: 'assets/eventos/medios'
     description: >-
       Actividades del club. Los eventos con fecha pasada se mueven solos a
       "Eventos anteriores": no hay que borrarlos.

@@ -60,7 +60,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="../assets/firebase-config.js?v=32"></script>
 <script src="../assets/evento-vista.js?v=32"></script>
-<script src="preview-evento.js?v=3"></script>
+<script src="preview-evento.js?v=4"></script>
 <script>
 /* Acceso al panel con la cuenta de Xuexi.
  *
@@ -141,7 +141,7 @@
     });
     var input = etiqueta && document.getElementById(etiqueta.htmlFor);
     if (!input) return;
-    var bloqueado = existente || input.dataset.importandoInstagram === 'true';
+    var bloqueado = existente;
     if (input.readOnly !== bloqueado) input.readOnly = bloqueado;
     input.setAttribute('aria-readonly', String(bloqueado));
     var aviso = document.getElementById('aviso-identificador');

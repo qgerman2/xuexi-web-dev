@@ -6,6 +6,7 @@
   'use strict';
   var MAX_FOTO = 20 * 1024 * 1024;
   var MAX_TOTAL = 80 * 1024 * 1024;
+  var CARPETA = 'assets/eventos/medios';
   var EXTENSION = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 
   function campo(d, nombre){
@@ -32,12 +33,12 @@
     var d = opciones.documento;
     var ventana = d.defaultView;
     var ruta = ventana.location.hash;
-    var formulario = campo(d, 'Identificador');
+    var formulario = campo(d, 'Detalle');
     var signal = opciones.signal;
     function comprobar(){
       signal.throwIfAborted();
       opciones.comprobar();
-      if (ventana.location.hash !== ruta || campo(d, 'Identificador') !== formulario){
+      if (ventana.location.hash !== ruta || campo(d, 'Detalle') !== formulario){
         throw new Error('Cambiaste de evento. Vuelve a elegir la publicación.');
       }
     }
@@ -55,7 +56,7 @@
     var medios = (post.media_type === 'CAROUSEL_ALBUM' ? (post.children?.data || []) : [post])
       .filter(function(m){ return m.media_type === 'IMAGE' && /^\d{1,30}$/.test(m.id); });
     var archivos = [];
-    if (!medios.length) return { id: null, rutas: [], archivos: [] };
+    if (!medios.length) return { rutas: [] };
     var total = 0;
     var lote = crypto.randomUUID().slice(0, 8);
     for (var i = 0; i < medios.length; i++){
@@ -83,21 +84,6 @@
       mostrar(archivos[archivos.length - 1]);
     }
 
-    // New events deliberately start with a blank identifier. Download first,
-    // then wait for the editor to choose it before resolving the media folder.
-    opciones.onEstado('Completa el identificador para importar las fotos.');
-    var ultimoId = '';
-    var desde = 0;
-    var identificador = await esperar(function(){
-      var input = campo(d, 'Identificador');
-      var valor = input?.value || '';
-      if (valor !== ultimoId){ ultimoId = valor; desde = Date.now(); }
-      return input !== d.activeElement && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(valor) && Date.now() - desde >= 700 && valor;
-    });
-    var inputId = campo(d, 'Identificador');
-    var soloLectura = inputId.readOnly;
-    inputId.dataset.importandoInstagram = 'true';
-    inputId.readOnly = true;
     var modal;
     try {
       comprobar();
@@ -123,12 +109,7 @@
         }, 20000);
       }
       comprobar();
-      if (campo(d, 'Identificador').value !== identificador){
-        throw new Error('El identificador cambió. Vuelve a importar las fotos.');
-      }
     } finally {
-      delete inputId.dataset.importandoInstagram;
-      inputId.readOnly = soloLectura;
       if (modal?.isConnected){
         var cerrar = modal.querySelector('button[aria-label*="Cerrar"],button[aria-label*="Close"]');
         if (cerrar) cerrar.click();
@@ -137,14 +118,14 @@
     comprobar();
     // Wait for the media dialog's close transition before touching the widgets.
     await esperar(function(){ return !d.querySelector('[role="dialog"] input[type="file"]'); }, 5000);
-    var rutas = archivos.map(function(file){ return 'assets/eventos/' + identificador + '/' + file.name; });
+    var rutas = archivos.map(function(file){ return CARPETA + '/' + file.name; });
     var portada = rutas.slice(0, 1);
     var galeria = rutas.slice(1);
     if (!opciones.inyectarFotos('Imagen de portada', portada, false) ||
         !opciones.inyectarFotos('Galería de fotos', galeria, true)){
       throw new Error('No se pudieron rellenar las fotos. Revisa el formulario.');
     }
-    return { id: identificador, rutas: rutas, archivos: archivos };
+    return { rutas: rutas };
   }
 
   window.XuexiIGMedios = { importar: importar };

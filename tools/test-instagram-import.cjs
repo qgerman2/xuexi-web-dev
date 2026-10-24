@@ -46,12 +46,21 @@ test('Instagram import stages native Decap media and publishes photos + entry in
     }));
   }
   const png = await fs.readFile(path.join(root, 'assets/logo.png'));
+  let legacyReads = 0;
+  await page.route('**/assets/eventos/legacy/poster.png', route => {
+    legacyReads++;
+    return route.fulfill({ contentType: 'image/png', body: png });
+  });
   let downloadFailure = false;
   let downloads = 0;
-  await page.route('https://ig.qgerman2.workers.dev/**', route => {
+  let holdSecond = true;
+  let releaseSecond;
+  const secondReady = new Promise(resolve => { releaseSecond = resolve; });
+  await page.route('https://ig.qgerman2.workers.dev/**', async route => {
     const url = route.request().url();
     if (url.includes('/instagram/media/')) {
       downloads++;
+      if (holdSecond && url.endsWith('/222')) await secondReady;
       return route.fulfill(downloadFailure
         ? { status: 502, json: { error: 'Fixture download failed' } }
         : { contentType: 'image/png', body: Buffer.concat([png, Buffer.from(url)]) });
@@ -99,10 +108,9 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   }
   const choose = page.locator('.ig-elegir');
   await choose.click();
-  await page.getByText('Completa el identificador para importar las fotos.', { exact: true }).waitFor();
+  await page.getByText('Descargando foto 2 de 2…', { exact: true }).waitFor();
   await preview.locator('.event-cover img').waitFor();
   assert.ok(await imagenCargada('.event-cover img'));
-  assert.ok(await imagenCargada('#stage-img'));
   assert.equal(await preview.locator('.event-description').innerText(), 'Descripción importada');
   assert.match(await preview.locator('.event-meta-item').filter({ hasText: 'Capacidad' }).innerText(), /Ilimitado/);
   assert.equal(await frame.getByLabel('Identificador').first().inputValue(), '');
@@ -113,6 +121,8 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   }), /Espera a que termine/);
   await page.locator('#ig-cancelar').click();
   await page.getByText('Importación cancelada.', { exact: true }).waitFor();
+  holdSecond = false;
+  releaseSecond();
   await preview.locator('.event-cover img').waitFor({ state: 'detached' });
 
   downloadFailure = true;
@@ -122,10 +132,16 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   assert.equal(requests.filter(r => r.method !== 'GET' && r.p !== '/sesion').length, 0);
   downloadFailure = false;
   await choose.click();
-  await page.getByText('Completa el identificador para importar las fotos.', { exact: true }).waitFor();
-  await frame.getByLabel('Identificador').first().fill('prueba-ig');
-  await frame.getByLabel('Identificador').first().press('Tab');
   await page.getByText('Importado. Guarda el evento para subir las fotos.', { exact: true }).waitFor();
+  assert.equal(await frame.getByLabel('Identificador').first().inputValue(), '', 'import completes with no identifier');
+  assert.equal(await frame.getByLabel('Título', { exact: true }).inputValue(), '');
+  await frame.getByLabel('Identificador').first().fill('todavía sin decidir');
+  await choose.click();
+  await page.getByText('Importado. Guarda el evento para subir las fotos.', { exact: true }).waitFor();
+  assert.equal(await frame.getByLabel('Identificador').first().inputValue(), 'todavía sin decidir', 'import also ignores an invalid identifier');
+  await frame.getByLabel('Identificador').first().click();
+  await frame.getByLabel('Identificador').first().press('ControlOrMeta+A');
+  await frame.getByLabel('Identificador').first().press('Backspace');
   const previews = await page.locator('#cms').evaluate(el => Array.from(el.contentDocument.querySelectorAll('img')).map(img => img.src));
   assert.equal(previews.length, 2);
   assert.ok(previews.every(src => src.startsWith('blob:')));
@@ -133,6 +149,20 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   // working, not just the images displayed by the form's image widgets.
   assert.ok(await imagenCargada('.event-cover img'));
   assert.ok(await imagenCargada('#stage-img'));
+  // Stored images in older per-event folders must still resolve after the
+  // configured upload folder becomes independent of the event identifier.
+  const cover = await page.locator('#cms').evaluate(el => {
+    const editor = el.contentWindow.CMS.editor;
+    const original = editor.getCurrentEntry().data.imagen;
+    editor.applyFieldPatch([{ path: 'imagen', value: 'assets/eventos/legacy/poster.png' }]);
+    return original;
+  });
+  assert.ok(await imagenCargada('.event-cover img'));
+  assert.ok(legacyReads > 0, 'legacy photo loads from its stored public path');
+  await page.locator('#cms').evaluate((el, original) => {
+    el.contentWindow.CMS.editor.applyFieldPatch([{ path: 'imagen', value: original }]);
+  }, cover);
+  assert.ok(await imagenCargada('.event-cover img'));
   await frame.getByLabel('Capacidad').fill('30');
   await preview.locator('.event-meta-item').filter({ hasText: /Capacidad\s*30/ }).waitFor();
   await frame.getByLabel('Capacidad').fill('0');
@@ -202,8 +232,8 @@ test('Instagram import stages native Decap media and publishes photos + entry in
   const event = JSON.parse(Buffer.from(blob.content, 'base64').toString());
   assert.equal(event.id, 'evento-final');
   assert.equal(event.titulo, 'Evento de prueba');
-  assert.match(event.imagen, /^assets\/eventos\/evento-final\/ig-222-.*\.png$/);
-  assert.match(event.galeria[0], /^assets\/eventos\/evento-final\/ig-111-.*\.png$/);
+  assert.match(event.imagen, /^assets\/eventos\/medios\/ig-222-.*\.png$/);
+  assert.match(event.galeria[0], /^assets\/eventos\/medios\/ig-111-.*\.png$/);
   assert.equal(event.detalle, 'Descripción importada');
   assert.equal(event.instagram, 'https://www.instagram.com/p/fixture/');
   assert.equal(event.cupos, 30);

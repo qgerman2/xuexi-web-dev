@@ -7,6 +7,13 @@
   var mediosBorrador = new Map();
   window.addEventListener('hashchange', function(){ mediosBorrador.clear(); });
   function medioEstable(getAsset, valor, campo){
+    // Older entries keep their original per-event paths. Resolve those paths
+    // directly while new uploads use the shared, identifier-independent folder.
+    if (typeof valor === 'string' && valor.startsWith('assets/eventos/') &&
+        !valor.startsWith('assets/eventos/medios/')){
+      var url = new URL(valor, raiz).href;
+      return { path: valor, url: url, toString: function(){ return url; } };
+    }
     var asset = getAsset(valor, campo);
     if (asset && asset.path !== 'empty.svg' && /^(blob:|data:image)/.test(asset.toString())){
       mediosBorrador.set(valor, asset);
@@ -23,7 +30,7 @@
   };
 
   window.registrarPreviewEvento = function(CMS){
-    // Keep native image widgets' draft thumbnails stable as the slug changes.
+    // Keep native draft thumbnails and older per-event public paths usable.
     // Decap still owns the files, upload controls and saved values.
     var imagen = CMS.getWidget('image');
     var ImagenEstable = window.createClass({

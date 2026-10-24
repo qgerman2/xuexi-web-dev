@@ -195,7 +195,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="assets/nav.js?v=32"></script>
 <script src="assets/firebase-config.js?v=32"></script>
-<script src="admin/instagram-media.js?v=4"></script>
+<script src="admin/instagram-media.js?v=5"></script>
 <script>
 /* Editor · Xuexi Club UC
  *
@@ -222,8 +222,6 @@
   var igPeticion = null;
   var igSeleccionando = false;
   var igImportacion = null;
-  var igFotosImportadas = null;
-  var igLimpiarSalida = null;
   var igCancelar = document.getElementById('ig-cancelar');
   var igEstado = document.getElementById('ig-estado');
   var igLista = document.getElementById('ig-lista');
@@ -272,8 +270,6 @@
     // Retira el contenido de la sesión anterior antes de comprobar la nueva.
     if (igPeticion) igPeticion.abort();
     if (igImportacion) igImportacion.abort();
-    if (igLimpiarSalida) igLimpiarSalida();
-    igFotosImportadas = null;
     igLista.replaceChildren();
     taller.classList.remove('visible');
     puerta.classList.remove('oculto');
@@ -573,7 +569,7 @@
         throw new Error('No se pudieron rellenar todos los campos. Revisa el formulario.');
       }
       var documentoImportacion = d;
-      igFotosImportadas = await window.XuexiIGMedios.importar({
+      await window.XuexiIGMedios.importar({
         post: post, usuario: user, documento: d,
         endpoint: new URL(INSTAGRAM).origin,
         signal: importacion.signal, onEstado: estadoImportacion,
@@ -587,7 +583,6 @@
           }
         }
       });
-      observarSalida(d);
       igLista.querySelectorAll('.ig-elegir').forEach(function(b){
         b.setAttribute('aria-pressed', b === boton ? 'true' : 'false');
       });
@@ -604,21 +599,6 @@
     }
   }
 
-  function observarSalida(d){
-    if (igLimpiarSalida) igLimpiarSalida();
-    var ventana = d.defaultView;
-    function salir(){
-      ventana.removeEventListener('hashchange', salir);
-      igLimpiarSalida = null;
-      igFotosImportadas = null;
-    }
-    ventana.addEventListener('hashchange', salir);
-    igLimpiarSalida = function(){
-      ventana.removeEventListener('hashchange', salir);
-      igLimpiarSalida = null;
-    };
-  }
-
   igCancelar.addEventListener('click', function(){
     if (igImportacion) igImportacion.abort();
   });
@@ -633,22 +613,8 @@
     inyectar: inyectar,
     cuandoHayaFormulario: cuandoHayaFormulario,
     documentoEditor: doc,
-    validarImportacion: function(entry){
+    validarImportacion: function(){
       if (igSeleccionando) throw new Error('Espera a que termine la importación de fotos o cancélala.');
-      var data = entry.get('data');
-      if (!igFotosImportadas?.id) return data;
-      var id = data.get('id');
-      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(id || '')) throw new Error('Completa el identificador antes de publicar.');
-      function rutaFinal(valor){
-        var indice = igFotosImportadas.rutas.indexOf(valor);
-        return indice === -1 ? valor : 'assets/eventos/' + id + '/' + igFotosImportadas.archivos[indice].name;
-      }
-      var galeria = data.get('galeria');
-      if (galeria?.map) galeria = galeria.map(rutaFinal);
-      else if (galeria) galeria = rutaFinal(galeria);
-      // Decap moves draft assets to the final slug's folder when publishing.
-      // Return only updated data for its preSave hook; typing never stages media.
-      return data.set('imagen', rutaFinal(data.get('imagen'))).set('galeria', galeria);
     }
   };
 })();
