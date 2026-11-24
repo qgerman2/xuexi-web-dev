@@ -70,6 +70,9 @@
       <button type="button" class="btn btn-outline" id="btn-logout">Cerrar Sesión</button>
     </div>
 
+    <!-- DONACIÓN: el monto lo valida el worker, no esta página. -->
+    <div id="donation-box"></div>
+
     <!-- TARJETA DE ESTADO DE PAGO / MERCADO PAGO -->
     <div id="payment-status-box"></div>
   </div>
@@ -181,7 +184,7 @@
 <script src="assets/nav.js?v=20"></script>
 <script src="assets/auth.js?v=26"></script>
 <script src="assets/coordinacion.js?v=21"></script>
-<script src="assets/cuotas.js?v=27"></script>
+<script src="assets/cuotas.js?v=31"></script>
 <script>
 (function(){
   document.getElementById('anio').textContent = new Date().getFullYear();
@@ -209,6 +212,45 @@
 
   var MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var PAYMENT_WORKER = 'https://mp.xuexiclub.workers.dev';
+  // Los mismos límites que CONFIG.donation en el worker. Aquí solo evitan un
+  // viaje inútil; quien decide es el worker.
+  var DONACION_MIN = 1000;
+  var DONACION_MAX = 20000;
+  var DONACION_MONTOS = [1000, 3000, 5000];
+
+  // Al volver de pagar, Mercado Pago agrega a la URL el estado del pago y el
+  // external_reference. Si es una donación se lee una vez y se saca de la
+  // URL, para que recargar no repita el aviso. Solo sirve para dar las
+  // gracias: cualquiera puede escribir esa URL, así que no prueba nada. El
+  // registro de verdad es el de Mercado Pago.
+  var MP_PARAMS = ['collection_id', 'collection_status', 'payment_id', 'status',
+    'external_reference', 'payment_type', 'merchant_order_id', 'preference_id',
+    'site_id', 'processing_mode', 'merchant_account_id'];
+  var retornoDonacion = (function(){
+    var q = new URLSearchParams(location.search);
+    var ref = q.get('external_reference') || '';
+    if (ref.indexOf('xuexi-don-') !== 0) return null;
+    // Sin pagar, Mercado Pago manda status=null, como texto.
+    var estado = q.get('status') || q.get('collection_status') || '';
+    MP_PARAMS.forEach(function(k){ q.delete(k); });
+    var resto = q.toString();
+    history.replaceState(null, '', location.pathname + (resto ? '?' + resto : '') + location.hash);
+    return { uid: ref.slice('xuexi-don-'.length), estado: estado };
+  })();
+
+  // El aviso según el estado que trajo la URL; null si no hay nada que decir.
+  // Solo se muestra a quien donó: la referencia lleva su uid.
+  function avisoRetornoDonacion(user){
+    if (!retornoDonacion || !user || retornoDonacion.uid !== user.uid) return null;
+    var e = retornoDonacion.estado;
+    if (e === 'approved') return { clase: 'al-dia', badge: 'badge-al-dia', etiqueta: '¡Gracias!',
+      texto: 'Recibimos tu donación. Gracias por apoyar las actividades del club.' };
+    if (e === 'pending' || e === 'in_process') return { clase: 'pendiente', badge: 'badge-pendiente', etiqueta: 'En proceso',
+      texto: 'Mercado Pago está procesando tu donación. Te avisará por correo cuando se apruebe.' };
+    if (e === 'rejected' || e === 'cancelled') return { clase: 'vencida', badge: 'badge-vencida', etiqueta: 'No se completó',
+      texto: 'Mercado Pago no aprobó el pago, así que no se cobró nada. Puedes intentarlo de nuevo.' };
+    return null;
+  }
 
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -532,6 +574,134 @@
     return pedirPago('/subscription', {method:'DELETE'});
   }
 
+  function crearDonacion(monto){
+    return pedirPago('/donation', {method:'POST', body:{amount:monto}});
+  }
+
+  function clp(n){
+    return '$' + Number(n).toLocaleString('es-CL');
+  }
+
+  // Tarjeta de donación. No depende de /me: donar no mira días ni suscripción.
+  // A coordinación le suma un atajo al log de donaciones, en pestaña nueva; el
+  // registro lo protege el worker (403 sin rol admin), no este botón.
+  function renderDonation(user){
+    var box = document.getElementById('donation-box');
+    if (!box) return;
+    var retorno = avisoRetornoDonacion(user);
+
+    var opciones = DONACION_MONTOS.map(function(m, i){
+      return '<label class="pay-tier"><input type="radio" name="donation-amount" value="' + m + '"' +
+        (i === 0 ? ' checked' : '') + '> <span><b>' + esc(clp(m)) + '</b><small>CLP</small></span></label>';
+    }).join('') +
+      '<label class="pay-tier"><input type="radio" name="donation-amount" value="otro"> ' +
+        '<span><b>Otro monto</b><small>CLP</small></span></label>';
+
+    box.innerHTML = '<div class="payment-card-status ' + (retorno ? retorno.clase : 'pendiente') + ' donation-card">' +
+      '<div class="pay-status-info">' +
+        '<div class="pay-seal-icon">捐</div>' +
+        '<div>' +
+          '<span class="pay-status-badge ' + (retorno ? retorno.badge : 'badge-pendiente') + '">' +
+            esc(retorno ? retorno.etiqueta : 'Opcional') + '</span>' +
+          '<h3 class="pay-status-title"><span class="zh">捐款</span>Donación</h3>' +
+          (retorno ? '<p class="pay-status-sub" role="status"><b>' + esc(retorno.texto) + '</b></p>' : '') +
+          '<p class="pay-status-sub">Apoya las actividades del club con un aporte único. ' +
+            'No reemplaza ni suma días a tu cuota de membresía.</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="pay-actions-panel">' +
+        '<div class="pay-tier-group donation-amounts" role="radiogroup" aria-label="Monto de la donación">' + opciones + '</div>' +
+        '<label class="pay-field" id="donation-custom-field" style="display:none">Monto en CLP' +
+          '<input type="number" id="donation-custom" inputmode="numeric" min="' + DONACION_MIN + '" max="' + DONACION_MAX +
+          '" step="1" placeholder="Ej: 2000"></label>' +
+        '<div class="pay-action-row">' +
+          '<button type="button" class="pay-btn-jade" id="donation-submit">Donar ' + esc(clp(DONACION_MONTOS[0])) + '</button>' +
+          (user && user.rol === 'admin' && window.XuexiCuotas
+            ? '<button type="button" class="coord-btn-mini" id="donation-registro" title="Se abre en una pestaña nueva">Ver registro de donaciones ↗</button>'
+            : '') +
+        '</div>' +
+        '<p class="pay-result" id="donation-result"></p>' +
+      '</div>' +
+    '</div>';
+
+    var campo = document.getElementById('donation-custom-field');
+    var input = document.getElementById('donation-custom');
+    var boton = document.getElementById('donation-submit');
+    var salida = document.getElementById('donation-result');
+
+    function mensaje(msg, error){
+      salida.textContent = msg || '';
+      salida.className = 'pay-result' + (error ? ' pay-result-error' : '');
+    }
+
+    function elegido(){
+      var el = box.querySelector('input[name="donation-amount"]:checked');
+      return el ? el.value : String(DONACION_MONTOS[0]);
+    }
+
+    // Devuelve el monto si es válido, o null. Solo pesos enteros dentro del
+    // rango: lo de afuera se rechaza, no se ajusta en silencio.
+    function montoValido(){
+      var raw = elegido() === 'otro' ? input.value.trim() : elegido();
+      if (!/^\d+$/.test(raw)) return null;
+      var n = Number(raw);
+      return n >= DONACION_MIN && n <= DONACION_MAX ? n : null;
+    }
+
+    // Los límites no se muestran hasta que se pasan. El máximo avisa apenas se
+    // supera; el mínimo solo al salir del campo, porque escribir 2000 pasa
+    // por 2, 20 y 200.
+    function problema(avisarMinimo){
+      var raw = input.value.trim();
+      if (elegido() !== 'otro' || !raw) return '';
+      if (!/^\d+$/.test(raw)) return 'Ingresa un monto en pesos, sin puntos ni decimales.';
+      var n = Number(raw);
+      if (n > DONACION_MAX) return 'El monto máximo es ' + clp(DONACION_MAX) + '.';
+      if (n < DONACION_MIN && avisarMinimo) return 'El monto mínimo es ' + clp(DONACION_MIN) + '.';
+      return '';
+    }
+
+    function actualizar(avisarMinimo){
+      var otro = elegido() === 'otro';
+      // .pay-field fija display:flex, que le gana al atributo hidden.
+      campo.style.display = otro ? '' : 'none';
+      var n = montoValido();
+      boton.disabled = n === null;
+      boton.textContent = n === null ? 'Donar' : 'Donar ' + clp(n);
+      var aviso = problema(avisarMinimo === true);
+      mensaje(aviso, Boolean(aviso));
+    }
+
+    [].forEach.call(box.querySelectorAll('input[name="donation-amount"]'), function(r){
+      r.addEventListener('change', function(){
+        actualizar();
+        if (elegido() === 'otro') input.focus();
+      });
+    });
+    input.addEventListener('input', function(){ actualizar(false); });
+    input.addEventListener('blur', function(){ actualizar(true); });
+
+    var registro = document.getElementById('donation-registro');
+    if (registro) registro.addEventListener('click', function(){
+      window.XuexiCuotas.abrirLogDonaciones();
+    });
+
+    boton.addEventListener('click', function(){
+      var n = montoValido();
+      if (n === null) { actualizar(true); return; }
+      boton.disabled = true;
+      mensaje('Preparando Mercado Pago…');
+      crearDonacion(n).then(function(res){
+        if (res && res.url) window.location.href = res.url;
+      }).catch(function(e){
+        boton.disabled = false;
+        mensaje(e.message, true);
+      });
+    });
+
+    actualizar();
+  }
+
   function renderPaymentShell(config){
     var payBox = document.getElementById('payment-status-box');
     if (!payBox) return;
@@ -700,6 +870,8 @@
     // escrituras.
     if (window.XuexiCoordinacion) window.XuexiCoordinacion.iniciar(user);
     if (window.XuexiCuotas) window.XuexiCuotas.iniciar(user);
+
+    renderDonation(user);
 
     memberName.textContent = user.nombre || user.displayName || (user.email ? user.email.split('@')[0] : 'Miembro Xuexi');
     memberEmail.textContent = (user.email || '') + (user.comision ? ' · Comisión ' + user.comision.toUpperCase() : '');

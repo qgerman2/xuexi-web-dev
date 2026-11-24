@@ -8,6 +8,10 @@
  * El worker no filtra ni busca: entrega los datos y el filtrado ocurre aquí,
  * sobre lo ya cargado. Por eso primero se trae todo (de 100 en 100) y después
  * se dibuja.
+ *
+ * Las donaciones llegan mezcladas con los cobros, marcadas con
+ * kind: 'donation'. No conceden días: todo lo que calcula el estado de cuota
+ * las deja fuera (ver pagosDe).
  */
 (function(){
   'use strict';
@@ -16,7 +20,10 @@
 
   var datos = { miembros: [], pagos: [], suscripciones: [] };
   var filtro = '';
+  var tipo = 'todo'; // 'todo' | 'cuotas' | 'donaciones'
+  var carga = null; // la promesa de la última carga; null si nunca se inició
   var logUrl = '';
+  var logDonacionesUrl = '';
 
   function esc(s){
     return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
@@ -138,9 +145,41 @@
   // Igual que el contrato: cada cobro aprobado y no devuelto concede 30 días.
   // Los días se apilan desde el vencimiento anterior o desde la fecha del cobro,
   // lo que ocurra más tarde.
+  function esDonacion(p){
+    return p.kind === 'donation';
+  }
+
+  function aprobado(p){
+    return p.status === 'approved' && !p.refunded;
+  }
+
+  // Solo cuotas: una donación contada aquí dejaría al día a quien solo donó.
   function pagosDe(uid){
     uid = normalizarUid(uid);
-    return datos.pagos.filter(function(p){ return normalizarUid(p.userId) === uid; });
+    return datos.pagos.filter(function(p){
+      return !esDonacion(p) && normalizarUid(p.userId) === uid;
+    });
+  }
+
+  function donaciones(){
+    return datos.pagos.filter(esDonacion);
+  }
+
+  function cuotas(){
+    return datos.pagos.filter(function(p){ return !esDonacion(p); });
+  }
+
+  // Verde lo aprobado, rojo lo rechazado, amarillo todo lo demás (pendiente,
+  // en proceso, devuelto…). Un devuelto vino aprobado, pero ya no cuenta.
+  function claseEstado(p){
+    if (p.refunded) return 'cuota-aviso';
+    if (p.status === 'approved') return 'cuota-ok';
+    if (p.status === 'rejected') return 'cuota-mal';
+    return 'cuota-aviso';
+  }
+
+  function origen(p){
+    return esDonacion(p) ? 'Donación' : (p.recurring ? 'Suscripción' : 'Pago único');
   }
 
   function suscripcionesDe(uid){
@@ -284,16 +323,47 @@
           '<td>' + fecha(p.date) + '</td>' +
           '<td>' + nombreMiembro(p.userId) + '</td>' +
           '<td>' + monto(p.amount) + '</td>' +
-          '<td>' + esc(p.refunded ? 'Devuelto' : p.status) + '</td>' +
-          '<td>' + (p.recurring ? 'Suscripción' : 'Pago único') + '</td>' +
+          '<td class="' + claseEstado(p) + '">' + esc(p.refunded ? 'Devuelto' : p.status) + '</td>' +
+          '<td>' + origen(p) + '</td>' +
         '</tr>';
       }).join('') + '</tbody></table>';
   }
 
-  function htmlLogCompleto(){
+  // Lo que el texto del filtro puede encontrar en una donación: quién donó
+  // (nombre, correo, uid), el estado y el monto.
+  function donacionCoincide(p){
+    var m = miembroPorUid(p.userId);
+    return coincide(p.userId) || coincide(p.status) || coincide(p.amount) ||
+      (m && (coincide(m.nombre) || coincide(m.email) || coincide(m.comision)));
+  }
+
+  function tablaDonaciones(aplicarFiltro){
+    var filas = donaciones().filter(function(p){
+      return aplicarFiltro === false || donacionCoincide(p);
+    });
+    if (!filas.length) return '<p class="coord-aviso">Sin donaciones que mostrar.</p>';
+    var total = filas.filter(aprobado).reduce(function(t, p){ return t + Number(p.amount || 0); }, 0);
+    return '<p class="coord-aviso">' + filas.length + (filas.length === 1 ? ' donación' : ' donaciones') +
+        ' · ' + monto(total) + ' aprobado</p>' +
+      '<table class="coord-tabla"><thead><tr>' +
+      '<th>Fecha</th><th>Miembro</th><th>Monto</th><th>Estado</th>' +
+      '</tr></thead><tbody>' +
+      filas.map(function(p){
+        return '<tr class="' + (p.refunded ? 'coord-usado' : '') + '">' +
+          '<td>' + fecha(p.date) + '</td>' +
+          '<td>' + nombreMiembro(p.userId) + '</td>' +
+          '<td>' + monto(p.amount) + '</td>' +
+          '<td class="' + claseEstado(p) + '">' + esc(p.refunded ? 'Devuelto' : p.status) + '</td>' +
+        '</tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  // soloDonaciones: el mismo log, con solo la tabla de donaciones. Es lo que
+  // abre el atajo de la tarjeta de donación.
+  function htmlLogCompleto(soloDonaciones){
     return '<!doctype html><html lang="es"><head><meta charset="utf-8">' +
       '<meta name="viewport" content="width=device-width, initial-scale=1">' +
-      '<title>Log completo de cuotas · Xuexi Club UC</title>' +
+      '<title>' + (soloDonaciones ? 'Log de donaciones' : 'Log completo de cuotas') + ' · Xuexi Club UC</title>' +
       '<style>' +
       'body{margin:0;padding:28px;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#140d0d;color:#f6eee4}' +
       'h1{font-family:Georgia,serif;font-weight:400;margin:0 0 6px}h2{font-family:Georgia,serif;font-weight:400;margin:28px 0 10px}' +
@@ -302,12 +372,23 @@
       'td{border-bottom:1px solid #34201d;padding:8px;color:#e8dcd0;vertical-align:top}code{color:#f2d37b}.coord-usado td{opacity:.55}' +
       '.cuota-ok{color:#a3e4d7}.cuota-aviso{color:#d4af61}.cuota-mal{color:#f5b7b1}' +
       '</style></head><body>' +
-      '<h1>Log completo de cuotas</h1>' +
-      '<p>' + datos.suscripciones.length + ' suscripciones · ' + datos.pagos.length +
-        ' cobros · generado ' + esc(new Date().toLocaleString('es-CL')) + '</p>' +
+      (soloDonaciones
+        ? '<h1>Log de donaciones</h1>' +
+          '<p>Últimos 12 meses · generado ' + esc(new Date().toLocaleString('es-CL')) + '</p>' +
+          tablaDonaciones(false) +
+          '</body></html>'
+        : '<h1>Log completo de cuotas</h1>' +
+      '<p>' + datos.suscripciones.length + ' suscripciones · ' + cuotas().length +
+        ' cobros de cuota · ' + donaciones().length + ' donaciones · generado ' + esc(new Date().toLocaleString('es-CL')) + '</p>' +
       '<h2>Suscripciones</h2>' + tablaSuscripciones(false) +
       '<h2>Cobros</h2>' + tablaPagos(false) +
-      '</body></html>';
+      '</body></html>');
+  }
+
+  function prepararLogDonacionesUrl(){
+    if (logDonacionesUrl) URL.revokeObjectURL(logDonacionesUrl);
+    logDonacionesUrl = URL.createObjectURL(new Blob([htmlLogCompleto(true)], {type:'text/html'}));
+    return logDonacionesUrl;
   }
 
   function prepararLogUrl(){
@@ -340,14 +421,22 @@
     var alDia = estados.filter(function(e){ return e.dias > 0 && e.clase === 'cuota-ok'; }).length;
     var porRenovar = estados.filter(function(e){ return e.dias > 0 && e.clase === 'cuota-aviso'; }).length;
     var conProblema = estados.filter(function(e){ return e.clase === 'cuota-mal' || e.label === 'Cobro fallido'; }).length;
+    var donado = donaciones().filter(aprobado).reduce(function(t, p){ return t + Number(p.amount || 0); }, 0);
+    var chips = [['todo', 'Todo'], ['cuotas', 'Cuotas'], ['donaciones', 'Donaciones']].map(function(c){
+      return '<button type="button" class="chip" data-cuotas-tipo="' + c[0] + '" aria-pressed="' +
+        (tipo === c[0]) + '">' + c[1] + '</button>';
+    }).join('');
     caja.innerHTML =
       duplicadas() +
       '<p class="coord-aviso">' + datos.miembros.length + ' miembros · ' +
         alDia + ' al día · ' + porRenovar + ' por renovar/reintento · ' +
         conProblema + ' sin días o con problema · ' + datos.suscripciones.length +
-        ' suscripciones · ' + datos.pagos.length + ' cobros (últimos 12 meses)</p>' +
+        ' suscripciones · ' + cuotas().length + ' cobros de cuota · ' +
+        donaciones().length + ' donaciones (' + monto(donado) + ' aprobado) · últimos 12 meses</p>' +
+      '<div class="filtros" id="cuotas-tipo">' + chips + '</div>' +
       '<input id="cuotas-filtro" class="coord-input" placeholder="Filtrar por miembro o estado…" value="' + esc(filtro) + '">' +
-      '<h3>Estado por miembro</h3>' + tablaEstados() +
+      (tipo !== 'donaciones' ? '<h3>Estado por miembro</h3>' + tablaEstados() : '') +
+      (tipo !== 'cuotas' ? '<h3>Donaciones</h3>' + tablaDonaciones() : '') +
       '<div class="coord-fila cuotas-raw-toggle">' +
         '<a class="coord-btn-mini" id="cuotas-abrir-raw" href="' + esc(prepararLogUrl()) + '" target="_blank" rel="noopener">' +
           'Abrir log completo en pestaña nueva</a>' +
@@ -363,13 +452,21 @@
       otro.setSelectionRange(otro.value.length, otro.value.length);
     });
 
+    [].forEach.call(caja.querySelectorAll('[data-cuotas-tipo]'), function(btn){
+      btn.addEventListener('click', function(){
+        tipo = btn.getAttribute('data-cuotas-tipo');
+        dibujar();
+      });
+    });
+
   }
 
   function recargar(){
     var caja = document.getElementById('cuotas-panel');
     if (!caja) return;
     aviso(caja, 'Cargando cuotas…');
-    cargarTodo().then(dibujar).catch(function(e){
+    carga = cargarTodo();
+    carga.then(dibujar).catch(function(e){
       aviso(caja, 'No se pudieron leer las cuotas: ' + e.message, true);
     });
   }
@@ -390,6 +487,23 @@
       }
       recargar();
     },
-    recargar: recargar
+    recargar: recargar,
+    // El atajo de la tarjeta de donación: el log en pestaña nueva, solo con
+    // donaciones. La pestaña se abre aquí mismo, dentro del clic, porque si se
+    // abriera al terminar la carga el navegador la bloquearía como popup; los
+    // datos llegan después.
+    abrirLogDonaciones: function(){
+      if (!carga) return;
+      var w = window.open('', '_blank');
+      if (!w) return;
+      w.opener = null;
+      w.document.title = 'Log de donaciones · Xuexi Club UC';
+      w.document.body.textContent = 'Cargando donaciones…';
+      carga.then(function(){
+        w.location.href = prepararLogDonacionesUrl();
+      }, function(e){
+        w.document.body.textContent = 'No se pudieron leer las donaciones: ' + e.message;
+      });
+    }
   };
 })();
