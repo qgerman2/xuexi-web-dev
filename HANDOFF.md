@@ -34,21 +34,28 @@ This document records the final implementation and the user's preferences from t
 Source files are `data/eventos/<id>.json`. The filename must match the `id` field.
 
 ```text
-data/eventos/<id>.json
-    → tools/agregar-eventos.py
-data/eventos.json
-    → tools/generar-paginas-evento.py + evento.html
-evento/<id>/index.html
+data/eventos/<id>.json + evento.html + public assets
+    → python3 tools/construir-sitio.py
+_site/data/eventos.json + _site/evento/<id>/index.html + public files
+    → GitHub Pages deployment artifact
 ```
 
-`data/eventos.json` and `evento/*/index.html` are generated outputs. Change source data or the template, then regenerate rather than editing outputs directly:
+Generated event HTML and the aggregate `data/eventos.json` are no longer committed. `_site/`, root `evento/` and root `data/eventos.json` are ignored. The deployment artifact still contains one HTML response per event, so existing URLs and link-preview metadata continue working. Only source JSON, the common template and assets live in Git.
+
+Build and preview locally:
 
 ```sh
-python3 tools/agregar-eventos.py
-python3 tools/generar-paginas-evento.py
+python3 tools/construir-sitio.py
+python3 -m http.server 8000 --directory _site
 ```
 
-The Agenda workflow in `.github/workflows/agenda.yml` regenerates after source-event/template changes on `main`. Its push retries preserve concurrent edits. Generated paths are deliberately excluded from its triggering paths.
+The builder starts with a clean `_site/`, copies public HTML/assets/data and the four frontend editor files, and runs the existing generators with explicit `--salida` destinations. It does not change source files or publish repository docs, tools, Worker source or Git metadata. The generators retain their old default output locations for compatibility, but the normal build must use `construir-sitio.py`.
+
+`.github/workflows/agenda.yml` is now named **Publicar sitio**. It runs on all pushes to `main` and manual dispatch, runs build tests, builds the site, uploads `_site/` with `actions/upload-pages-artifact`, then deploys with `actions/deploy-pages`. There are no generated-file commits, pushes, rebases or bot write permissions. The public base URL comes from `actions/configure-pages`' `base_url` output and is passed through `XUEXI_SITIO`, so custom domains and repository subpaths are respected.
+
+**One-time migration step:** in repository Settings → Pages → Build and deployment → Source, select **GitHub Actions** before publishing these changes to `main`. No connected GitHub management tool or authenticated CLI was available to change this remotely. The new workflow has been built/tested locally but has not been pushed or deployed in this session. The `github-pages` deployment environment must allow `main`.
+
+Build regression tests: `python3 -m unittest discover -s tools -p 'test_construir_sitio.py'`. They verify initial-HTML OG/canonical metadata and base URLs, generated aggregate normalization, public artifact contents, source preservation, stale-event removal on rebuild and failure on inconsistent source IDs.
 
 The event `id` determines its public URL and source JSON filename. It must not change after publication. Decap media is independent of the identifier and uses `assets/eventos/medios/`; the separate published-event gallery uploader still uses per-event folders.
 
@@ -96,7 +103,7 @@ The custom preview:
 - Does not initialize Firebase or perform content writes.
 - Reflects responsive breakpoints at the preview pane's actual width, so a narrow pane shows the mobile stack.
 
-All shared `assets/` references currently use **`?v=33`**, consistently across pages. `admin/preview-evento.js` uses `?v=4`; `admin/instagram-media.js` uses `?v=5`. When changing shared assets, update cache versions together and regenerate event pages. Earlier mismatched Firebase script versions caused login/portal redirect loops.
+All shared `assets/` references currently use **`?v=33`**, consistently across pages. `admin/preview-evento.js` uses `?v=4`; `admin/instagram-media.js` uses `?v=5`. When changing shared assets, update cache versions together and rebuild `_site/`. Earlier mismatched Firebase script versions caused login/portal redirect loops.
 
 ## Editor access and navigation
 

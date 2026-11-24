@@ -25,9 +25,8 @@ public_folder: assets
 collections:
   # ─────────────────────────── EVENTOS ───────────────────────────
   # Un archivo por evento en data/eventos/. El nombre del archivo es el id,
-  # que es la URL pública (/evento/<id>/) y la clave con la que se guardan sus
-  # fotos. Al guardar, una GitHub Action junta todo en data/eventos.json y
-  # vuelve a generar las páginas: ese archivo NO se edita desde aquí.
+  # que es la URL pública (/evento/<id>/). GitHub Actions construye la agenda
+  # y las páginas dentro del artefacto de Pages; no se guardan en la rama.
   - name: agenda
     label: Agenda
     label_singular: evento

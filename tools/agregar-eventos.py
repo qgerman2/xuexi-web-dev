@@ -14,6 +14,7 @@ campo id de dentro no coincide, esto falla en vez de inventarse una respuesta.
 
 Se ejecuta solo:  python3 tools/agregar-eventos.py
 """
+import argparse
 import glob
 import io
 import json
@@ -26,6 +27,9 @@ SALIDA = os.path.join(RAIZ, 'data', 'eventos.json')
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--salida', default=SALIDA, help='Archivo JSON generado')
+    salida_json = parser.parse_args().salida
     archivos = sorted(glob.glob(os.path.join(CARPETA, '*.json')))
     if not archivos:
         print('No hay eventos en data/eventos/', file=sys.stderr)
@@ -80,13 +84,14 @@ def main():
     salida['eventos'] = eventos
 
     texto = json.dumps(salida, ensure_ascii=False, indent=2) + '\n'
-    antes = io.open(SALIDA, encoding='utf-8').read() if os.path.exists(SALIDA) else None
+    antes = io.open(salida_json, encoding='utf-8').read() if os.path.exists(salida_json) else None
     if antes == texto:
         print(f'{len(eventos)} eventos · sin cambios')
         return 0
 
-    io.open(SALIDA, 'w', encoding='utf-8').write(texto)
-    print(f'{len(eventos)} eventos → data/eventos.json')
+    os.makedirs(os.path.dirname(os.path.abspath(salida_json)), exist_ok=True)
+    io.open(salida_json, 'w', encoding='utf-8').write(texto)
+    print(f'{len(eventos)} eventos → {salida_json}')
     return 0
 
 

@@ -15,6 +15,7 @@ Cada página es una copia de evento.html con:
 
 Se ejecuta solo:  python3 tools/generar-paginas-evento.py
 """
+import argparse
 import glob
 import io
 import json
@@ -85,6 +86,9 @@ def cabecera(ev):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--salida', default=SALIDA, help='Carpeta de páginas generadas')
+    salida = parser.parse_args().salida
     plantilla = io.open(PLANTILLA, encoding='utf-8').read()
 
     # Fuera el <title> y la <meta description> genéricos de la plantilla.
@@ -114,16 +118,16 @@ def main():
         # Con <base>, una ancla suelta apuntaría a la raíz del sitio.
         pagina = pagina.replace('href="#contenido"', f'href="evento/{nombre}/#contenido"')
 
-        carpeta = os.path.join(SALIDA, nombre)
+        carpeta = os.path.join(salida, nombre)
         os.makedirs(carpeta, exist_ok=True)
         io.open(os.path.join(carpeta, 'index.html'), 'w', encoding='utf-8').write(pagina)
         print(f'  evento/{nombre}/index.html')
 
     # Si se borra un evento, su página no puede quedarse viva para siempre.
-    if os.path.isdir(SALIDA):
-        for d in os.listdir(SALIDA):
-            if os.path.isdir(os.path.join(SALIDA, d)) and d not in vivos:
-                shutil.rmtree(os.path.join(SALIDA, d))
+    if os.path.isdir(salida):
+        for d in os.listdir(salida):
+            if os.path.isdir(os.path.join(salida, d)) and d not in vivos:
+                shutil.rmtree(os.path.join(salida, d))
                 print(f'  (eliminada) evento/{d}/')
 
     print(f'\n{len(vivos)} páginas · base {SITIO}')

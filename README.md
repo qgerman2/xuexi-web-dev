@@ -12,22 +12,21 @@ Universidad Católica de Chile.
 
 ## Cómo agregar o editar una actividad
 
-### Opción recomendada: el panel
+### Opción recomendada: el editor
 
-Abre **[xuexiclub.cl/admin.html](https://xuexiclub.cl/admin.html)** y usa el formulario.
+Abre **[xuexiclub.cl/admin.html](https://xuexiclub.cl/admin.html)** con tu cuenta de administrador y usa el formulario.
 No hay que escribir código ni entender JSON: eliges tipo de actividad, comisión y estado
 desde listas desplegables.
 
-1. Completa el formulario y presiona **Agregar actividad**
-2. Cuando termines, presiona **Copiar** en el recuadro "Publicar en el sitio"
-3. Abre [`data/eventos.json`](../../edit/main/data/eventos.json) en GitHub
-4. Selecciona todo (`Cmd + A`) y pega encima (`Cmd + V`)
-5. Escribe qué cambiaste y presiona **Commit changes**
+1. Abre Agenda y crea o edita un evento.
+2. Completa el formulario y presiona **Publicar**.
+3. El editor guarda `data/eventos/<id>.json` y las fotos en el repositorio.
+4. GitHub Actions construye y publica el sitio, incluida la vista previa al compartir el enlace.
 
 El sitio se actualiza solo en 1 o 2 minutos.
 
-> El panel guarda tu trabajo en el navegador mientras no lo publiques, así que puedes
-> cerrarlo y seguir después. El botón **Restaurar original** descarta los cambios sin publicar.
+> Espera a que termine la publicación antes de cerrar el editor. Una importación
+> de Instagram en curso conserva sus fotos en memoria y se pierde al recargar.
 
 Los campos siguen los **Estatutos Xuexi 2026**: los tipos de actividad del Art. 2.1
 (taller, charla, congreso, almuerzo, festival, stand), las comisiones de los Art. 5 a 7,
@@ -35,8 +34,10 @@ y los ciclos de mayo–junio y octubre–noviembre del Art. 6.3.
 
 ### Opción manual
 
-También puedes editar **[`data/eventos.json`](data/eventos.json)** directamente con el
-lápiz ✏️ de GitHub, copiando un bloque `{ … }` existente y cambiando sus datos.
+También puedes editar un archivo en **[`data/eventos/`](data/eventos/)** directamente
+en GitHub. Para crear otro evento, copia uno existente: el nombre del archivo
+debe coincidir con su campo `id`. `data/eventos.json` y las páginas individuales
+se generan durante la publicación y no se guardan en Git.
 
 ### Campos de un evento
 
@@ -135,7 +136,7 @@ página nunca se ve rota aunque falten fotos. Formato cuadrado, 400 × 400 px y 
 1. Entra a la carpeta **`assets/`**
 2. **Add file → Upload files** y arrastra la imagen
 3. Nómbrala simple, sin espacios ni tildes: `taller-te.jpg`
-4. En `eventos.json`, escribe ese nombre en el campo `imagen`
+4. En `data/eventos/<id>.json`, escribe la ruta en el campo `imagen`
 
 Recomendación: imágenes de menos de 500 KB para que el sitio cargue rápido.
 
@@ -144,9 +145,10 @@ Recomendación: imágenes de menos de 500 KB para que el sitio cargue rápido.
 ## Para desarrollar localmente
 
 ```bash
-git clone https://github.com/xuexi-club-uc/xuexi-web.git
-cd xuexi-web
-python3 -m http.server 8000
+git clone https://github.com/qgerman2/xuexi-web-dev.git
+cd xuexi-web-dev
+python3 tools/construir-sitio.py
+python3 -m http.server 8000 --directory _site
 ```
 
 Luego abre http://localhost:8000
@@ -156,24 +158,34 @@ Luego abre http://localhost:8000
 > protocolo `file://` (política CORS). Verías el sitio sin eventos.
 > Con el servidor local anda bien.
 
-No hay dependencias, ni build, ni framework: HTML, CSS y JavaScript sin
-librerías. Lo que ves en el repositorio es exactamente lo que se publica.
+La construcción usa solo Python 3 y su biblioteca estándar. Genera la agenda y
+las páginas con etiquetas Open Graph dentro de `_site/`, junto con los archivos
+públicos. Vuelve a ejecutar la construcción después de editar las fuentes.
+
+Pruebas de la construcción:
+
+```bash
+python3 -m unittest discover -s tools -p 'test_construir_sitio.py'
+```
 
 ---
 
 ## Estructura del proyecto
 
 ```
-├── index.html          El sitio completo
-├── admin.html          Panel para cargar actividades
+├── index.html          Portada
+├── evento.html         Plantilla común de los eventos
+├── admin.html          Editor de contenidos
 ├── data/
-│   ├── eventos.json    ← La agenda. Esto es lo que se edita seguido.
+│   ├── eventos/        ← Un JSON por evento; esto es lo que se edita.
 │   ├── equipo.json     ← El equipo y la coordinación.
 │   └── reportajes.json ← Los reportajes publicados.
 ├── assets/             Imágenes: logo, sello y fotos de actividades
 │   ├── equipo/         Retratos de las personas
 │   └── reportajes/     PDF de los reportajes
-├── CNAME               El dominio (no tocar)
+├── tools/              Construcción y pruebas
+├── _site/              Sitio generado; ignorado por Git
+├── CNAME               Dominio personalizado, si está configurado
 └── .nojekyll           Config de GitHub Pages (no tocar)
 ```
 
@@ -185,9 +197,24 @@ librerías. Lo que ves en el repositorio es exactamente lo que se publica.
 
 - **Dominio:** `xuexiclub.cl`, registrado en [NIC Chile](https://www.nic.cl)
   a nombre de `xuexiclub.uc@gmail.com`
-- **Hosting:** GitHub Pages (gratis), desde la rama `main`
+- **Hosting:** GitHub Pages mediante GitHub Actions al actualizar `main`
 - **HTTPS:** certificado automático de GitHub — verificar que
   *Settings → Pages → Enforce HTTPS* esté activado
+
+### Activar la publicación por GitHub Actions
+
+Una sola vez, selecciona **Settings → Pages → Build and deployment → Source →
+GitHub Actions**. Después de guardar estos cambios en `main`, el workflow
+**Publicar sitio** construye `_site/` y lo despliega directamente. También se
+puede iniciar desde **Actions → Publicar sitio → Run workflow**.
+
+El workflow obtiene la URL pública desde la configuración de Pages para generar
+las etiquetas de cada evento. No crea commits de archivos generados ni necesita
+un token personal adicional. Para una construcción local con otra URL pública:
+
+```bash
+XUEXI_SITIO=https://example.com python3 tools/construir-sitio.py
+```
 
 ### DNS — cómo está armado
 
